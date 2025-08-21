@@ -20,13 +20,6 @@ steps:
 
 - task: PublishBuildArtifacts@1
   inputs:
-    PathtoPublish: 'build'
-    ArtifactName: 'react-app'
-    publishLocation: 'Container'
-  displayName: 'Publish build artifacts'
-- task: PublishBuildArtifacts@1
-  inputs:
-    PathtoPublish: 'build'
-    ArtifactName: 'react-app'
-    publishLocation: 'Container'
+    targetPath: $(System.DefaultWorkingDirectory)/bin/WebApp
+    artifactName: WebApp
   displayName: 'Publish build artifacts'

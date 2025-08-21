@@ -18,8 +18,18 @@ steps:
 - script: npm run build
   displayName: 'Build React app'
 
+- task: CopyFiles@2
+  inputs:
+    SourceFolder: '$(System.DefaultWorkingDirectory)'
+    Contents: |
+      .next/**
+      public/**
+      package.json
+      package-lock.json
+    TargetFolder: '$(Build.ArtifactStagingDirectory)/WebApp'
+
 - task: PublishBuildArtifacts@1
   inputs:
-    targetPath: $(System.DefaultWorkingDirectory)/bin/WebApp
+    targetPath: $(System.DefaultWorkingDirectory)/WebApp
     artifactName: WebApp
   displayName: 'Publish build artifacts'

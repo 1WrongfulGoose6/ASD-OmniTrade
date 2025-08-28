@@ -28,6 +28,9 @@
     "tailwindcss": "^4"
   },
   "jest": {
-    "testEnvironment": "jsdom"
+    "testEnvironment": "jsdom",
+    "setupFilesAfterEnv": [
+      "./jest.setup.js"
+    ]
   }
 }

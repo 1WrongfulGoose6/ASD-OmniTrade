@@ -1,4 +1,4 @@
-# Improved React CI/CD Pipeline
+# Multi-Stage React CI/CD Pipeline
 
 trigger:
   branches:
@@ -9,56 +9,11 @@ pool:
   vmImage: ubuntu-latest
 
 stages:
-  - stage: CI
-    displayName: 'Continuous Integration'
+  - stage: Build
+    displayName: 'Build and Publish Artifacts'
     jobs:
-      - job: Install_Dependencies
-        displayName: 'Install Dependencies'
-        steps:
-          - task: UseNode@1
-            inputs:
-              version: '18.x'
-            displayName: 'Use Node.js 18.x'
-
-          - task: Cache@2
-            displayName: 'Cache node_modules'
-            inputs:
-              key: 'npm | "$(Agent.OS)" | package.json'
-              path: 'node_modules'
-              cacheHitVar: 'NPM_CACHE_RESTORED'
-
-          - script: npm install
-            displayName: 'Install Dependencies'
-            condition: ne(variables.NPM_CACHE_RESTORED, 'true')
-
-          # Overkill for now
-          # - script: npm run lint
-          #   displayName: 'Run ESLint'
-
-      - job: Test
-        displayName: 'Run Unit Tests'
-        steps:
-          - task: UseNode@1
-            inputs:
-              version: '18.x'
-            displayName: 'Use Node.js 18.x'
-
-          - task: Cache@2
-            displayName: 'Cache node_modules'
-            inputs:
-              key: 'npm | "$(Agent.OS)" | package.json'
-              path: 'node_modules'
-              cacheHitVar: 'NPM_CACHE_RESTORED'
-
-          - script: npm install
-            displayName: 'Install Dependencies'
-            condition: ne(variables.NPM_CACHE_RESTORED, 'true')
-
-          - script: npm test
-            displayName: 'Run Jest Tests'
-
       - job: Build
-        displayName: 'Build Application'
+        displayName: 'Build and Publish'
         steps:
           - task: UseNode@1
             inputs:
@@ -88,11 +43,39 @@ stages:
                 public/**
                 package.json
                 next.config.mjs
-              TargetFolder: '$(Build.ArtifactStagingDirectory)'
+              TargetFolder: '$(Build.ArtifactStagingDirectory)/WebApp'
 
           - task: PublishBuildArtifacts@1
             displayName: 'Publish Artifact: WebApp'
             inputs:
-              PathtoPublish: '$(Build.ArtifactStagingDirectory)'
+              PathtoPublish: '$(Build.ArtifactStagingDirectory)/WebApp'
               ArtifactName: 'WebApp'
-              publishLocation: 'Container'
+          
+          - task: PublishBuildArtifacts@1
+            displayName: 'Publish Artifact: node_modules'
+            inputs:
+              PathtoPublish: 'node_modules'
+              ArtifactName: 'node_modules_for_test'
+
+  - stage: Test
+    displayName: 'Run Tests'
+    dependsOn: Build
+    jobs:
+      - job: Test
+        displayName: 'Run Unit Tests'
+        steps:
+          - task: UseNode@1
+            inputs:
+              version: '18.x'
+            displayName: 'Use Node.js 18.x'
+
+          - task: DownloadBuildArtifacts@0
+            displayName: 'Download node_modules'
+            inputs:
+              buildType: 'current'
+              downloadType: 'single'
+              artifactName: 'node_modules_for_test'
+              downloadPath: '$(System.DefaultWorkingDirectory)'
+
+          - script: npm test
+            displayName: 'Run Jest Tests'

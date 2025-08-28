@@ -3,23 +3,24 @@
 // - format text boxes better with error mesgs and text/negative restrictions
 // - add stoploss/takeprofit
 // - some sort of confirmation screen for order being filled or not
-"use client"; 
+"use client";
 
+import React from "react";
 import { useState } from "react";
 
 export default function OrderForm() {
   const [side, setSide] = useState("Buy");
   const [orderType, setOrderType] = useState("Limit");
-  const [amount, setAmount] = useState("");
+  const [quantity, setQuantity] = useState("");
   const [limitPrice, setLimitPrice] = useState("");
 
   const handleSubmit = (e) => {
-    e.preventDefault(); //stop reloading
-    const orderData = { //object to pass to other pages
+    e.preventDefault(); // stop reloading
+    const orderData = {
       side,
       orderType,
       quantity,
-      ...(orderType === "Limit" ? { limitPrice } : {}), //change depending on if limit order
+      ...(orderType === "Limit" ? { limitPrice } : {}),
     };
     console.log("Order submitted:", orderData);
   };
@@ -73,8 +74,8 @@ export default function OrderForm() {
           Amount (AUD)
           <input
             type="number"
-            value={amount}
-            onChange={(e) => setAmount(e.target.value)}
+            value={quantity}
+            onChange={(e) => setQuantity(e.target.value)}
             placeholder="Enter amount"
             className="OrderForm-ArrowInput"
           />

@@ -51,8 +51,15 @@ stages:
             displayName: 'Install Dependencies'
             condition: ne(variables.NPM_CACHE_RESTORED, 'true')
 
-          - script: npm test
-            displayName: 'Run Jest Tests'
+          - script: npm run test:ci
+            displayName: 'Run Jest Tests (CI)'
+
+          - task: PublishTestResults@2
+            displayName: 'Publish JUnit Test Results'
+            inputs:
+              testResultsFormat: 'JUnit'
+              testResultsFiles: 'test-results/**/*.xml'
+              failTaskOnFailedTests: true
 
       - job: Build
         displayName: 'Build Application'

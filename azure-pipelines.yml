@@ -8,23 +8,45 @@ trigger:
 pool:
   vmImage: ubuntu-latest
 
-steps:
-- task: UseNode@1
-  inputs:
-    version: '18.x'
-  displayName: 'Use Node.js'
+stages:
+  - stage: Install
+    displayName: 'Install Dependencies'
+    jobs:
+      - job: Install
+        steps:
+          - task: UseNode@1
+            inputs:
+              version: '18.x'
+            displayName: 'Use Node.js'
+          - script: npm install
+            displayName: 'Install dependencies'
 
-- script: npm install
-  displayName: 'Install dependencies'
+  - stage: Build
+    displayName: 'Build Application'
+    dependsOn: Install
+    jobs:
+      - job: Build
+        steps:
+          - script: npm run build
+            displayName: 'Build React app'
 
-- script: npm run build
-  displayName: 'Build React app'
+  - stage: Test
+    displayName: 'Run Tests'
+    dependsOn: Build
+    jobs:
+      - job: Test
+        steps:
+          - script: npm test
+            displayName: 'Run Jest tests'
 
-- script: npm test
-  displayName: 'Run Jest tests'
-
-- task: PublishBuildArtifacts@1
-  inputs:
-    targetPath: $(System.DefaultWorkingDirectory)/bin/WebApp
-    artifactName: WebApp
-  displayName: 'Publish build artifacts'
+  - stage: Publish
+    displayName: 'Publish Artifacts'
+    dependsOn: Test
+    jobs:
+      - job: Publish
+        steps:
+          - task: PublishBuildArtifacts@1
+            inputs:
+              targetPath: $(System.DefaultWorkingDirectory)/bin/WebApp
+              artifactName: WebApp
+            displayName: 'Publish build artifacts'

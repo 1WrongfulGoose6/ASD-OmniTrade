@@ -1,7 +1,6 @@
-const { getJestProjects } = require('@nx/jest');
-
 module.exports = {
-  projects: getJestProjects(),
+  testEnvironment: 'jsdom',
+  setupFilesAfterEnv: ['./jest.setup.js'],
   transform: {
     '^.+\\.(js|jsx|ts|tsx)$': ['babel-jest', { configFile: './babel.config.jest.js' }],
   },

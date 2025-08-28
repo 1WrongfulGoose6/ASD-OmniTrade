@@ -12,7 +12,7 @@ stages:
   - stage: CI
     displayName: 'Continuous Integration'
     jobs:
-      - job: Install Dependencies
+      - job: Install_Dependencies
         displayName: 'Install Dependencies'
         steps:
           - task: UseNode@1

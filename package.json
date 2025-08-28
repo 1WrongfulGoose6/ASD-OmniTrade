@@ -26,11 +26,5 @@
     "eslint-config-next": "15.5.0",
     "jest-environment-jsdom": "^30.1.1",
     "tailwindcss": "^4"
-  },
-  "jest": {
-    "testEnvironment": "jsdom",
-    "setupFilesAfterEnv": [
-      "./jest.setup.js"
-    ]
   }
 }

@@ -1,4 +1,4 @@
-# Prototype Pipeline - React
+# Improved React CI/CD Pipeline
 
 trigger:
   branches:
@@ -9,44 +9,90 @@ pool:
   vmImage: ubuntu-latest
 
 stages:
-  - stage: Install
-    displayName: 'Install Dependencies'
+  - stage: CI
+    displayName: 'Continuous Integration'
     jobs:
-      - job: Install
+      - job: Install Dependencies
+        displayName: 'Install Dependencies'
         steps:
           - task: UseNode@1
             inputs:
               version: '18.x'
-            displayName: 'Use Node.js'
-          - script: npm install
-            displayName: 'Install dependencies'
+            displayName: 'Use Node.js 18.x'
 
-  - stage: Build
-    displayName: 'Build Application'
-    dependsOn: Install
-    jobs:
-      - job: Build
-        steps:
-          - script: npm run build
-            displayName: 'Build React app'
-
-  - stage: Test
-    displayName: 'Run Tests'
-    dependsOn: Build
-    jobs:
-      - job: Test
-        steps:
-          - script: npm test
-            displayName: 'Run Jest tests'
-
-  - stage: Publish
-    displayName: 'Publish Artifacts'
-    dependsOn: Test
-    jobs:
-      - job: Publish
-        steps:
-          - task: PublishBuildArtifacts@1
+          - task: Cache@2
+            displayName: 'Cache node_modules'
             inputs:
-              targetPath: $(System.DefaultWorkingDirectory)/bin/WebApp
-              artifactName: WebApp
-            displayName: 'Publish build artifacts'
+              key: 'npm | "$(Agent.OS)" | package.json'
+              path: 'node_modules'
+              cacheHitVar: 'NPM_CACHE_RESTORED'
+
+          - script: npm install
+            displayName: 'Install Dependencies'
+            condition: ne(variables.NPM_CACHE_RESTORED, 'true')
+
+          # Overkill for now
+          # - script: npm run lint
+          #   displayName: 'Run ESLint'
+
+      - job: Test
+        displayName: 'Run Unit Tests'
+        steps:
+          - task: UseNode@1
+            inputs:
+              version: '18.x'
+            displayName: 'Use Node.js 18.x'
+
+          - task: Cache@2
+            displayName: 'Cache node_modules'
+            inputs:
+              key: 'npm | "$(Agent.OS)" | package.json'
+              path: 'node_modules'
+              cacheHitVar: 'NPM_CACHE_RESTORED'
+
+          - script: npm install
+            displayName: 'Install Dependencies'
+            condition: ne(variables.NPM_CACHE_RESTORED, 'true')
+
+          - script: npm test
+            displayName: 'Run Jest Tests'
+
+      - job: Build
+        displayName: 'Build Application'
+        steps:
+          - task: UseNode@1
+            inputs:
+              version: '18.x'
+            displayName: 'Use Node.js 18.x'
+
+          - task: Cache@2
+            displayName: 'Cache node_modules'
+            inputs:
+              key: 'npm | "$(Agent.OS)" | package.json'
+              path: 'node_modules'
+              cacheHitVar: 'NPM_CACHE_RESTORED'
+
+          - script: npm install
+            displayName: 'Install Dependencies'
+            condition: ne(variables.NPM_CACHE_RESTORED, 'true')
+
+          - script: npm run build
+            displayName: 'Build React App'
+
+          - task: CopyFiles@2
+            displayName: 'Copy Files to Artifact Staging Directory'
+            inputs:
+              SourceFolder: '$(System.DefaultWorkingDirectory)'
+              Contents: |
+                .next/**
+                public/**
+                package.json
+                next.config.mjs
+              TargetFolder: '$(Build.ArtifactStagingDirectory)'
+
+          - task: PublishBuildArtifacts@1
+            displayName: 'Publish Artifact: WebApp'
+            inputs:
+              PathtoPublish: '$(Build.ArtifactStagingDirectory)'
+              ArtifactName: 'WebApp'
+              publishLocation: 'Container'

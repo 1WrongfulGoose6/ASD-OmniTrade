@@ -18,6 +18,9 @@ steps:
 - script: npm run build
   displayName: 'Build React app'
 
+- script: npm test
+  displayName: 'Run Jest tests'
+
 - task: PublishBuildArtifacts@1
   inputs:
     targetPath: $(System.DefaultWorkingDirectory)/bin/WebApp

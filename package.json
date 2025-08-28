@@ -7,7 +7,8 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
-    "test": "jest"
+    "test": "jest",
+    "test:ci": "npm run test -- --watchAll=false --reporters=default --reporters=jest-junit"
   },
   "dependencies": {
     "jest": "^30.1.1",
@@ -19,12 +20,21 @@
     "@babel/preset-env": "^7.28.3",
     "@babel/preset-react": "^7.27.1",
     "@eslint/eslintrc": "^3",
+    "@eslint/js": "^9.34.0",
     "@tailwindcss/postcss": "^4",
     "@testing-library/jest-dom": "^6.8.0",
     "@testing-library/react": "^16.3.0",
-    "eslint": "^9",
+    "eslint": "^9.34.0",
     "eslint-config-next": "15.5.0",
+    "eslint-plugin-react": "^7.37.5",
+    "globals": "^16.3.0",
     "jest-environment-jsdom": "^30.1.1",
+    "jest-junit": "^16.0.0",
     "tailwindcss": "^4"
+  }
+  ,
+  "jest-junit": {
+    "outputDirectory": "test-results",
+    "outputName": "junit.xml"
   }
 }

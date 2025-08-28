@@ -1,3 +1,4 @@
+import React from 'react';
 import Header from './Header';
 
 const holdings = [
@@ -53,7 +54,7 @@ export default function Portfolio() {
       <main className="p-8">
         <div className="mb-8">
           <h1 className="text-4xl font-bold mb-2">Portfolio Overview</h1>
-          <p className="text-lg text-blue-200">Welcome back, here's how your portfolio is performing.</p>
+          <p className="text-lg text-blue-200">Welcome back, here&apos;s how your portfolio is performing.</p>
         </div>
 
         <div className="bg-white/10 backdrop-blur-lg rounded-xl p-6 mb-8">
@@ -63,7 +64,7 @@ export default function Portfolio() {
               <p className="text-3xl font-bold">${totalValue.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p>
             </div>
             <div>
-              <p className="text-blue-200 text-sm">Today's Profit/Loss</p>
+              <p className="text-blue-200 text-sm">Today&apos;s Profit/Loss</p>
               <p className={`text-3xl font-bold ${totalProfitLoss >= 0 ? 'text-green-400' : 'text-red-400'}`}>
                 ${totalProfitLoss.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
               </p>

@@ -1,26 +1,37 @@
 "use client";
 
-import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer } from "recharts";
+import React, {useState} from "react";
 import GraphSection from "./components/graphSection";
+import MainSection from "@/app/market-data-display/detail/components/mainSection";
+import NewsSection from "@/app/market-data-display/detail/components/newsSection";
+import {useRightPanel} from "@/app/market-data-display/detail/hooks/useRightPanel";
+import { ChevronLeft } from "lucide-react";
+import NewsSectionMinimize from "@/app/market-data-display/detail/components/newsSectionMinimize"; // icon for minimize
 
 export default function MarketDetail() {
-  // Demo price history (replace with API later)
-  
+    const {showRight, } = useRightPanel();
 
-  return (
-    <div className="grid grid-cols-10 min-h-screen">
-      {/* Left Section (70%) */}
-      <div className="col-span-7 bg-gray-100 flex flex-col">
-        {/* Top Navigation */}
-        <div className="bg-white shadow p-4">
-          {nav}
-        </div>
+    return (
+        <div className="flex h-screen overflow-hidden bg-gradient-to-br from-blue-500 to-blue-200">
+            {/* Left Section */}
+            <div
+                className={`transition-all duration-500 ease-in-out ${
+                    showRight ? "basis-7/10" : "basis-full"
+                } p-4 pr-0`}
+            >
+                <MainSection/>
+            </div>
 
-        {/* Main Content */}
-        <div className="flex-1 p-4 overflow-y-auto">
-          {left}
+            {/* Right Section */}
+            {showRight? (
+                <div className="basis-3/10 p-4 transition-all">
+                    <NewsSection/>
+                </div>
+            ) : (
+                <div className="w-fit p-4 transition-all">
+                    <NewsSectionMinimize/>
+                </div>
+            )}
         </div>
-      </div>
-    </div>
-  );
+    );
 }

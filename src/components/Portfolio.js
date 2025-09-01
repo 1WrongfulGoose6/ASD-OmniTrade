@@ -71,13 +71,12 @@ export default function Portfolio() {
         </svg>
       </div>
 
-
       <header className="relative z-10 border-b border-white/15">
         <nav className="mx-auto flex max-w-6xl items-center justify-between px-8 py-5">
-          <div className="text-xl font-semibold tracking-tight">OmniTrade</div>
-          <div className="hidden gap-8 text-sm/6 md:flex">
+          <Link href="/" className="text-3xl font-bold tracking-tight hover:opacity-90">OmniTrade</Link>
+          <div className="hidden gap-8 text-xl md:flex">
+            <Link href="/market-data-display" className="hover:opacity-90">Stock</Link>
             <Link href="/portfolio" className="hover:opacity-90">Portfolio</Link>
-            <Link href="/stocks" className="hover:opacity-90">Stock</Link>
             <Link href="/profile" className="hover:opacity-90">Profile</Link>
             <Link href="/settings" className="hover:opacity-90">Settings</Link>
           </div>

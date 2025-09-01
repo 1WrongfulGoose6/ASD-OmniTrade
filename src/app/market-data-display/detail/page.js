@@ -1,11 +1,9 @@
 "use client";
 
-import React, {useState} from "react";
-import GraphSection from "./components/graphSection";
+import React from "react";
 import MainSection from "@/app/market-data-display/detail/components/mainSection";
 import NewsSection from "@/app/market-data-display/detail/components/newsSection";
 import {useRightPanel} from "@/app/market-data-display/detail/hooks/useRightPanel";
-import { ChevronLeft } from "lucide-react";
 import NewsSectionMinimize from "@/app/market-data-display/detail/components/newsSectionMinimize"; // icon for minimize
 
 export default function MarketDetail() {

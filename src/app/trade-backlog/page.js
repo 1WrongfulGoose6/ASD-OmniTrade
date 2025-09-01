@@ -1,3 +1,5 @@
+import React from "react";
+
 export const metadata = {
   title: "Trade Backlog",
   description: "View your recent trades in OmniTrade",

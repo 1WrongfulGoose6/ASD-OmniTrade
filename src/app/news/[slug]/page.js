@@ -1,4 +1,5 @@
 // app/news/[slug]/page.js
+import React from "react";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { MOCK_NEWS } from "../_data";
@@ -19,7 +20,7 @@ export async function generateMetadata({ params }) {
   };
 }
 
-// Make the page async and await params too
+// eslint-disable-next-line react/prop-types
 export default async function ArticlePage({ params }) {
   const { slug } = await params; //
   const article = MOCK_NEWS.find((n) => n.slug === slug);

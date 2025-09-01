@@ -1,4 +1,5 @@
 // app/news/page.js
+import React from "react";
 import Link from "next/link";
 import { MOCK_NEWS } from "./_data";
 

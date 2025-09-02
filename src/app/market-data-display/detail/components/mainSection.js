@@ -22,16 +22,21 @@ export default function MainSection() {
                     <span className="text-green-600 font-bold flex items-end">$192.50</span>
                 </div>
 
-                {/* Buttons */}
+                {/* Buttons - links to trade order form (Ashwin)*/}
                 <div className="flex flex-row gap-4 ">
-                    <button
-                        className="px-6 py-2 bg-green-500 text-white font-semibold rounded-xl shadow-md hover:bg-green-300 transition">
-                        Buy
-                    </button>
-                    <button
-                        className="px-6 py-2 bg-red-500 text-white font-semibold rounded-xl shadow-md hover:bg-red-300 transition">
-                        Sell
-                    </button>
+                    <Link
+                        href={{
+                            pathname: "/trade", // or wherever your order form page lives
+                            query: {
+                                symbol: "AAPL",
+                                name: "Apple Inc.",
+                                price: "192.50",
+                            },
+                        }}
+                        className="px-6 py-2 bg-blue-500 text-white font-semibold rounded-xl shadow-md hover:bg-blue-600 transition"
+                    >
+                        Trade
+                    </Link>
                 </div>
             </div>
 

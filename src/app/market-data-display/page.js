@@ -4,6 +4,7 @@ import React from "react";
 import {useRouter} from "next/navigation";
 import Link from "next/link";
 import {ArrowLeft} from "lucide-react";
+import NavBar from "@/components/NavBar";
 
 export default function MarketDataList() {
     const router = useRouter();
@@ -36,6 +37,9 @@ export default function MarketDataList() {
                           d="M0,288L48,266.7C96,245,192,203,288,170.7C384,139,480,117,576,133.3C672,149,768,203,864,224C960,245,1056,235,1152,213.3C1248,192,1344,160,1392,144L1440,128L1440,320L1392,320C1344,320,1248,320,1152,320C1056,320,960,320,864,320C768,320,672,320,576,320C480,320,384,320,288,320C192,320,96,320,48,320L0,320Z"/>
                 </svg>
             </div>
+
+            <NavBar/>
+
             {/* Top section */}
             <div className="w-full flex items-center justify-between p-4 px-8 border-b bg-gray-50 rounded-2xl">
                 {/* Back button */}

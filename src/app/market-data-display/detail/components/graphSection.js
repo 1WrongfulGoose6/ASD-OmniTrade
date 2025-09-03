@@ -1,4 +1,4 @@
-import {LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, Legend, CartesianGrid, Label} from "recharts";
+import {LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid} from "recharts";
 import React from "react";
 
 export default function GraphSection(){

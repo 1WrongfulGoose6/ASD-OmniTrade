@@ -1,18 +1,17 @@
 "use client";
 
-import React, {useState} from "react";
-import GraphSection from "./components/graphSection";
+import React from "react";
 import MainSection from "@/app/market-data-display/detail/components/mainSection";
 import NewsSection from "@/app/market-data-display/detail/components/newsSection";
 import {useRightPanel} from "@/app/market-data-display/detail/hooks/useRightPanel";
-import { ChevronLeft } from "lucide-react";
-import NewsSectionMinimize from "@/app/market-data-display/detail/components/newsSectionMinimize"; // icon for minimize
+import NewsSectionMinimize from "@/app/market-data-display/detail/components/newsSectionMinimize";
+import NavBar from "@/components/NavBar"; // icon for minimize
 
 export default function MarketDetail() {
     const {showRight, } = useRightPanel();
 
     return (
-        <div className="flex p-8 px-16 h-screen overflow-hidden bg-gradient-to-br from-blue-600 to-blue-400">
+        <div className="flex flex-col p-8 px-32 h-screen overflow-hidden bg-gradient-to-br from-blue-600 to-blue-400">
 
             <div className="absolute inset-0 z-0 overflow-hidden">
                 <svg className="absolute top-0 left-0 h-64 w-full text-white/20" xmlns="http://www.w3.org/2000/svg"
@@ -27,25 +26,29 @@ export default function MarketDetail() {
                 </svg>
             </div>
 
-            {/* Left Section */}
-            <div
-                className={`transition-all duration-500 ease-in-out z-10 ${
-                    showRight ? "basis-7/10" : "basis-full"
-                } p-4 pr-0`}
-            >
-                <MainSection/>
-            </div>
+            <NavBar/>
 
-            {/* Right Section */}
-            {showRight ? (
-                <div className="basis-3/10 p-4 transition-all z-10">
-                    <NewsSection/>
+            <main className={"h-full flex flex-row mt-4"}>
+                {/* Left Section */}
+                <div
+                    className={`transition-all duration-500 ease-in-out z-10 ${
+                        showRight ? "basis-7/10" : "basis-full"
+                    } pr-4`}
+                >
+                    <MainSection/>
                 </div>
-            ) : (
-                <div className="w-fit p-4 transition-all">
-                    <NewsSectionMinimize/>
-                </div>
-            )}
+
+                {/* Right Section */}
+                {showRight ? (
+                    <div className="basis-3/10 transition-all z-10">
+                        <NewsSection/>
+                    </div>
+                ) : (
+                    <div className="w-fit transition-all">
+                        <NewsSectionMinimize/>
+                    </div>
+                )}
+            </main>
         </div>
     );
 }

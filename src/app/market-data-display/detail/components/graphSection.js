@@ -1,4 +1,4 @@
-import {LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid} from "recharts";
+import {LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid, Label} from "recharts";
 import React from "react";
 
 export default function GraphSection(){
@@ -32,7 +32,6 @@ export default function GraphSection(){
                                 <Label value="Price ($)" angle={-90} position="insideLeft" style={{ fill: "#6b7280", fontSize: 12 }} />
                             </YAxis>
                             <Tooltip />
-                            <Legend />
                             <Line type="monotone" dataKey="price" stroke="#2563eb" strokeWidth={1} dot={false} />
                         </LineChart>
                     </ResponsiveContainer>

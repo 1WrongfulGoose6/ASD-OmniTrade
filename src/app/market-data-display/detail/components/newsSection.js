@@ -5,7 +5,7 @@ import {useRightPanel} from "@/app/market-data-display/detail/hooks/useRightPane
 import { ChevronRight } from "lucide-react"; // icon for minimize
 
 export default function NewsSection() {
-    const {setShowRight} = useRightPanel();
+    const { setShowRight} = useRightPanel();
     // Fake news data
     const news = [
         {

@@ -39,20 +39,13 @@ function HomePage() {
       {/* Top nav */}
       <header className="relative z-10 border-b border-white/15">
         <nav className="mx-auto flex max-w-6xl items-center justify-between px-8 py-5">
-          {/* Logo */}
-          <Link href="/" className="text-3xl font-bold tracking-tight hover:opacity-90">
-            OmniTrade
-          </Link>
-
-          {/* Nav links */}
-          <div className="hidden gap-8 text-xl md:flex">
-            <Link href="/market-data-display" className="hover:opacity-90">Stocks</Link>
+          <div className="text-xl font-semibold tracking-tight">OmniTrade</div>
+          <div className="hidden gap-8 text-sm/6 md:flex">
             <Link href="/portfolio" className="hover:opacity-90">Portfolio</Link>
+            <Link href="/stocks" className="hover:opacity-90">Stock</Link>
             <Link href="/profile" className="hover:opacity-90">Profile</Link>
             <Link href="/settings" className="hover:opacity-90">Settings</Link>
           </div>
-
-          {/* Auth buttons */}
           <div className="flex items-center gap-3">
             <Link href="/login" className="rounded-full border border-white/30 bg-white/10 px-4 py-2 text-sm backdrop-blur hover:bg-white/20">
               Log in
@@ -111,7 +104,7 @@ function HomePage() {
               </div>
             </div>
             <div className="mt-6">
-              <Link href="/market-data-display" className="text-sm font-medium text-blue-700 hover:underline">Explore stocks →</Link>
+              <Link href="/stocks" className="text-sm font-medium text-blue-700 hover:underline">Explore stocks →</Link>
             </div>
           </div>
         </div>

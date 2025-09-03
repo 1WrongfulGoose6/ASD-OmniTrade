@@ -4,12 +4,12 @@ import Link from 'next/link';
 export default function Header() {
   return (
     <header className="flex justify-between items-center p-4 bg-white/10 backdrop-blur-lg">
-      <div className="text-2xl font-bold">
+      <div className="text-3xl font-bold">
         <Link href="/">OmniTrade</Link>
       </div>
       <nav className="hidden md:flex gap-6 items-center">
         <Link href="/portfolio" className="hover:text-blue-300">Portfolio</Link>
-        <Link href="/trade" className="hover:text-blue-300">Trade</Link>
+        <Link href="/trade" className="hover:text-blue-300">Stocks</Link>
         <Link href="#" className="hover:text-blue-300">Profile</Link>
         <Link href="#" className="hover:text-blue-300">Settings</Link>
       </nav>

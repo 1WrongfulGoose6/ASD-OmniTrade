@@ -42,7 +42,7 @@ function HomePage() {
           <div className="text-xl font-semibold tracking-tight">OmniTrade</div>
           <div className="hidden gap-8 text-sm/6 md:flex">
             <Link href="/portfolio" className="hover:opacity-90">Portfolio</Link>
-            <Link href="/market-data-display" className="hover:opacity-90">Stock</Link>
+            <Link href="/stocks" className="hover:opacity-90">Stock</Link>
             <Link href="/profile" className="hover:opacity-90">Profile</Link>
             <Link href="/settings" className="hover:opacity-90">Settings</Link>
           </div>

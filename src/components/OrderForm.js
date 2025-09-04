@@ -29,7 +29,7 @@ export default function OrderForm() {
   };
 
   return (
-    <section className="flex flex-col bg-white rounded-2xl p-6 shadow-xl border-0">
+    <section className="flex flex-col bg-blue-50 rounded-2xl p-6 shadow-xl border-0">
       <h2 className="text-lg font-bold text-gray-800">Place Order</h2>
 
       <form onSubmit={handleSubmit} className="flex flex-col gap-5 flex-1">

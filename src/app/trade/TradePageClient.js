@@ -2,7 +2,7 @@
 "use client"; // client component
 
 import React, { useState, useEffect } from "react";
-import GraphSection from "@/app/market-data-display/detail/components/graphSection";
+import GraphSection from "@/app/market-data-display/detail/[stockSymbol]/components/graphSection";
 import OrderForm from "@/components/OrderForm";
 import { useSearchParams } from "next/navigation";
 

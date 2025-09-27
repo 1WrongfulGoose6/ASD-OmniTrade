@@ -1,30 +1,58 @@
 'use client'
 
-import React from "react";
-import {useRouter} from "next/navigation";
+import React, { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import Link from "next/link";
-import {ArrowLeft} from "lucide-react";
+import { ArrowLeft } from "lucide-react";
 import NavBar from "@/components/NavBar";
 
 export default function MarketDataList() {
     const router = useRouter();
-    // Demo data (you could later replace with API fetch)
-    const coins = [
-        { id: 1, name: "Bitcoin", symbol: "BTC", price: "$64,520", change: "+2.5%", marketCap: "$1.2T" },
-        { id: 2, name: "Ethereum", symbol: "ETH", price: "$3,150", change: "-1.2%", marketCap: "$380B" },
-        { id: 3, name: "Cardano", symbol: "ADA", price: "$0.52", change: "+0.8%", marketCap: "$18B" },
-        { id: 4, name: "Solana", symbol: "SOL", price: "$132", change: "+4.1%", marketCap: "$56B" },
-        { id: 5, name: "Dogecoin", symbol: "DOGE", price: "$0.089", change: "-0.6%", marketCap: "$12B" },
-    ];
 
-    function ViewDetail(){
-        router.push("/market-data-display/detail");
+    // State to hold the fetched and filtered data
+    const [coins, setCoins] = useState([]);
+    const [isLoading, setIsLoading] = useState(true);
+    const [error, setError] = useState(null);
+    const [searchTerm, setSearchTerm] = useState('');
+
+    useEffect(() => {
+        // Asynchronous function to fetch data from the API route
+        const fetchMarketData = async () => {
+            try {
+                // Fetch from your internal API endpoint
+                const response = await fetch('/api/marketdata');
+
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+
+                const data = await response.json();
+                setCoins(data);
+            } catch (e) {
+                console.error("Failed to fetch market data:", e);
+                setError("Failed to load market data. Please try again later.");
+            } finally {
+                setIsLoading(false);
+            }
+        };
+
+        fetchMarketData();
+    }, []); // Empty dependency array ensures this effect runs only once on mount
+
+    // Function to filter coins based on the search term
+    const filteredCoins = coins.filter(coin =>
+        coin.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        coin.symbol.toLowerCase().includes(searchTerm.toLowerCase())
+    );
+
+    function ViewDetail(symbol) {
+        router.push("/market-data-display/detail/"+symbol);
     }
 
     return (
         <main
-            className="flex-col min-h-screen bg-gradient-to-br from-blue-600 to-blue-400 flex gap-4 items-center justify-center px-32">
-
+            className="flex-col min-h-screen bg-gradient-to-br from-blue-600 to-blue-400 flex gap-4 items-center justify-center px-32"
+        >
             <div className="absolute inset-0 z-0 overflow-hidden">
                 <svg className="absolute top-0 left-0 h-64 w-full text-white/20" xmlns="http://www.w3.org/2000/svg"
                      viewBox="0 0 1440 320" preserveAspectRatio="none">
@@ -61,51 +89,60 @@ export default function MarketDataList() {
                         type="text"
                         placeholder="Search coin..."
                         className="w-full max-w-md px-4 py-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-blue-400 text-gray-700 shadow-sm"
+                        value={searchTerm}
+                        onChange={(e) => setSearchTerm(e.target.value)}
                     />
                 </div>
-
-                <div className="overflow-x-auto">
-                    <table className="w-full table-auto border-collapse">
-                        <thead>
-                        <tr className="text-gray-500 uppercase text-sm tracking-wider border-b border-gray-200">
-                            <th className="py-3 px-4 text-left">Name</th>
-                            <th className="py-3 px-4 text-left">Symbol</th>
-                            <th className="py-3 px-4 text-right">Current Price</th>
-                            <th className="py-3 px-4 text-right">24h</th>
-                            <th className="py-3 px-4 text-right">Market Cap</th>
-                            <th className="py-3 px-4 text-right">Trade Volume</th>
-                        </tr>
-                        </thead>
-                        <tbody>
-                        {coins.map((coin) => (
-                            <tr
-                                key={coin.id}
-                                className="transition transform hover:bg-gray-300 cursor-pointer"
-                                onClick={() => ViewDetail()}
-                            >
-                                <td className="py-4 px-4 flex items-center gap-3 text-gray-800 font-semibold">
-                                    <div
-                                        className="w-10 h-10 bg-blue-500 text-white flex items-center justify-center rounded-full font-bold">
-                                        {coin.symbol[0]}
-                                    </div>
-                                    {coin.name}
-                                </td>
-                                <td className="py-4 px-4 text-gray-500">{coin.symbol}</td>
-                                <td className="py-4 px-4 text-gray-800 text-right">{coin.price}</td>
-                                <td
-                                    className={`py-4 px-4 text-right font-medium ${
-                                        coin.change.startsWith("+") ? "text-green-600" : "text-red-600"
-                                    }`}
-                                >
-                                    {coin.change}
-                                </td>
-                                <td className="py-4 px-4 text-gray-500 text-right">{coin.marketCap}</td>
-                                <td className="py-4 px-4 text-gray-500 text-right">{coin.volume}</td>
+                {isLoading ? (
+                    <div className="text-center py-8 text-gray-500">
+                        <p>Loading market data...</p>
+                    </div>
+                ) : error ? (
+                    <div className="text-center py-8 text-red-500">
+                        <p>{error}</p>
+                    </div>
+                ) : (
+                    <div className="overflow-x-auto">
+                        <table className="w-full table-auto border-collapse">
+                            <thead>
+                            <tr className="text-gray-500 uppercase text-sm tracking-wider border-b border-gray-200">
+                                <th className="py-3 px-4 text-left">Name</th>
+                                <th className="py-3 px-4 text-left">Symbol</th>
+                                <th className="py-3 px-4 text-right">Current Price</th>
+                                <th className="py-3 px-4 text-right">24h</th>
+                                <th className="py-3 px-4 text-right">Market Cap</th>
                             </tr>
-                        ))}
-                        </tbody>
-                    </table>
-                </div>
+                            </thead>
+                            <tbody>
+                            {filteredCoins.map((coin) => (
+                                <tr
+                                    key={coin.id}
+                                    className="transition transform hover:bg-gray-300 cursor-pointer"
+                                    onClick={() => ViewDetail(coin.symbol)}
+                                >
+                                    <td className="py-4 px-4 flex items-center gap-3 text-gray-800 font-semibold">
+                                        <div
+                                            className="w-10 h-10 bg-blue-500 text-white flex items-center justify-center rounded-full font-bold">
+                                            {coin.symbol[0]}
+                                        </div>
+                                        {coin.name}
+                                    </td>
+                                    <td className="py-4 px-4 text-gray-500">{coin.symbol}</td>
+                                    <td className="py-4 px-4 text-gray-800 text-right">{coin.price}</td>
+                                    <td
+                                        className={`py-4 px-4 text-right font-medium ${
+                                            coin.change.startsWith("+") ? "text-green-600" : "text-red-600"
+                                        }`}
+                                    >
+                                        {coin.change}
+                                    </td>
+                                    <td className="py-4 px-4 text-gray-500 text-right">{coin.marketCap}</td>
+                                </tr>
+                            ))}
+                            </tbody>
+                        </table>
+                    </div>
+                )}
             </div>
         </main>
     );

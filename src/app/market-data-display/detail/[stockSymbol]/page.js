@@ -1,14 +1,18 @@
 "use client";
 
 import React from "react";
-import MainSection from "@/app/market-data-display/detail/components/mainSection";
-import NewsSection from "@/app/market-data-display/detail/components/newsSection";
-import {useRightPanel} from "@/app/market-data-display/detail/hooks/useRightPanel";
-import NewsSectionMinimize from "@/app/market-data-display/detail/components/newsSectionMinimize";
+import PropTypes from 'prop-types';
+
+import MainSection from "@/app/market-data-display/detail/[stockSymbol]/components/mainSection";
+import NewsSection from "@/app/market-data-display/detail/[stockSymbol]/components/newsSection";
+import {useRightPanel} from "@/app/market-data-display/detail/[stockSymbol]/hooks/useRightPanel";
+import NewsSectionMinimize from "@/app/market-data-display/detail/[stockSymbol]/components/newsSectionMinimize";
 import NavBar from "@/components/NavBar"; // icon for minimize
 
-export default function MarketDetail() {
-    const {showRight, } = useRightPanel();
+export default function MarketDetail({params}) {
+    const {showRight,} = useRightPanel();
+
+    const {stockSymbol} = React.use(params);
 
     return (
         <div className="flex flex-col p-8 px-32 h-screen overflow-hidden bg-gradient-to-br from-blue-600 to-blue-400">
@@ -35,7 +39,7 @@ export default function MarketDetail() {
                         showRight ? "basis-7/10" : "basis-full"
                     } pr-4`}
                 >
-                    <MainSection/>
+                    <MainSection stockSymbol={stockSymbol}/>
                 </div>
 
                 {/* Right Section */}
@@ -52,3 +56,8 @@ export default function MarketDetail() {
         </div>
     );
 }
+
+MarketDetail.propTypes = {
+    // Define that 'stockSymbol' must be a string and is required
+    params: PropTypes.object.isRequired,
+};

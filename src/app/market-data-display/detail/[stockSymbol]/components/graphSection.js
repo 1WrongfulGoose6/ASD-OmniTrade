@@ -1,17 +1,9 @@
 import {LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid, Label} from "recharts";
 import React from "react";
+import PropTypes from 'prop-types';
 
-export default function GraphSection(){
-    const data = [
-    { time: "10:00", price: 64000 },
-    { time: "11:00", price: 64500 },
-    { time: "12:00", price: 64250 },
-    { time: "13:00", price: 64800 },
-    { time: "14:00", price: 65200 },
-    { time: "15:00", price: 64900 },
-    { time: "16:00", price: 65500 },
-  ];
-
+export default function GraphSection({data}){
+    console.log(data)
     return (
         <div className="bg-white/90 w-full">
             {/* Chart + Buttons Row */}
@@ -42,3 +34,7 @@ export default function GraphSection(){
         </div>
     )
 }
+
+GraphSection.propTypes = {
+    data: PropTypes.object.isRequired,
+};

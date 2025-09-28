@@ -1,25 +1,54 @@
 'use client'
 
 import React from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
 import NavBar from "@/components/NavBar";
 
 export default function MarketDataList() {
-  const router = useRouter();
+    const router = useRouter();
 
-  const coins = [
-    { id: 1, name: "Bitcoin", symbol: "BTC", price: "$64,520", change: "+2.5%", marketCap: "$1.2T", volume: "$32B" },
-    { id: 2, name: "Ethereum", symbol: "ETH", price: "$3,150", change: "-1.2%", marketCap: "$380B", volume: "$18B" },
-    { id: 3, name: "Cardano", symbol: "ADA", price: "$0.52", change: "+0.8%", marketCap: "$18B", volume: "$0.9B" },
-    { id: 4, name: "Solana", symbol: "SOL", price: "$132", change: "+4.1%", marketCap: "$56B", volume: "$2.1B" },
-    { id: 5, name: "Dogecoin", symbol: "DOGE", price: "$0.089", change: "-0.6%", marketCap: "$12B", volume: "$0.7B" },
-  ];
+    // State to hold the fetched and filtered data
+    const [coins, setCoins] = useState([]);
+    const [isLoading, setIsLoading] = useState(true);
+    const [error, setError] = useState(null);
+    const [searchTerm, setSearchTerm] = useState('');
 
-  function ViewDetail() {
-    router.push("/market-data-display/detail");
-  }
+    useEffect(() => {
+        // Asynchronous function to fetch data from the API route
+        const fetchMarketData = async () => {
+            try {
+                // Fetch from your internal API endpoint
+                const response = await fetch('/api/marketdata');
+
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+
+                const data = await response.json();
+                setCoins(data);
+            } catch (e) {
+                console.error("Failed to fetch market data:", e);
+                setError("Failed to load market data. Please try again later.");
+            } finally {
+                setIsLoading(false);
+            }
+        };
+
+        fetchMarketData();
+    }, []); // Empty dependency array ensures this effect runs only once on mount
+
+    // Function to filter coins based on the search term
+    const filteredCoins = coins.filter(coin =>
+        coin.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        coin.symbol.toLowerCase().includes(searchTerm.toLowerCase())
+    );
+
+    function ViewDetail(symbol) {
+        router.push("/market-data-display/detail/"+symbol);
+    }
 
   return (
     <main className="relative min-h-screen overflow-hidden bg-gradient-to-br from-blue-600 to-blue-400 text-white">
@@ -48,61 +77,72 @@ export default function MarketDataList() {
           <div className="w-14" /> {/* spacer to balance layout */}
         </div>
 
-        {/* Search */}
-        <div className="mt-6 flex justify-center">
-          <input
-            type="text"
-            placeholder="Search stock…"
-            className="w-full max-w-md rounded-lg border border-white/30 bg-white/80 px-4 py-2 text-gray-800 placeholder:text-gray-500 backdrop-blur focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-400 shadow-sm"
-          />
-        </div>
-
-        {/* Table card */}
-        <div className="mt-6 rounded-2xl bg-white/90 backdrop-blur-md p-6 shadow-xl text-gray-900">
-          <div className="overflow-x-auto">
-            <table className="w-full table-auto border-collapse">
-              <thead>
-                <tr className="border-b border-gray-200 text-sm uppercase tracking-wider text-gray-500">
-                  <th className="px-4 py-3 text-left">Name</th>
-                  <th className="px-4 py-3 text-left">Symbol</th>
-                  <th className="px-4 py-3 text-right">Current Price</th>
-                  <th className="px-4 py-3 text-right">24h</th>
-                  <th className="px-4 py-3 text-right">Market Cap</th>
-                  <th className="px-4 py-3 text-right">Trade Volume</th>
-                </tr>
-              </thead>
-              <tbody className="text-sm">
-                {coins.map((coin) => (
-                  <tr
-                    key={coin.id}
-                    className="cursor-pointer transition hover:bg-gray-100/70"
-                    onClick={ViewDetail}
-                  >
-                    <td className="px-4 py-3 font-semibold text-gray-900">
-                      <div className="flex items-center gap-3">
-                        <div className="flex h-10 w-10 items-center justify-center rounded-full bg-blue-600 text-white font-bold">
-                          {coin.symbol[0]}
+                {/* Search Bar */}
+                <div className="mb-6 flex justify-center">
+                    <input
+                        type="text"
+                        placeholder="Search stock..."
+                        className="w-full max-w-md rounded-lg border border-white/30 bg-white/80 px-4 py-2 text-gray-800 placeholder:text-gray-500 backdrop-blur focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-400 shadow-sm"
+                        value={searchTerm}
+                        onChange={(e) => setSearchTerm(e.target.value)}
+                    />
+                </div>
+                {isLoading ? (
+                    <div className="text-center py-8 text-gray-500">
+                        <p>Loading market data...</p>
+                    </div>
+                ) : error ? (
+                    <div className="text-center py-8 text-red-500">
+                        <p>{error}</p>
+                    </div>
+                ) : (
+                    <div className="mt-6 rounded-2xl bg-white/90 backdrop-blur-md p-6 shadow-xl text-gray-900">
+                        <div className="overflow-x-auto">
+                            <table className="w-full table-auto border-collapse">
+                                <thead>
+                                <tr className="border-b border-gray-200 text-sm uppercase tracking-wider text-gray-500">
+                                    <th className="px-4 py-3 text-left">Name</th>
+                                    <th className="px-4 py-3 text-left">Symbol</th>
+                                    <th className="px-4 py-3 text-right">Current Price</th>
+                                    <th className="px-4 py-3 text-right">24h</th>
+                                    <th className="px-4 py-3 text-right">Market Cap</th>
+                                    <th className="px-4 py-3 text-right">Trade Volume</th>
+                                </tr>
+                                </thead>
+                                <tbody className="text-sm">
+                                {filteredCoins.map((coin) => (
+                                    <tr
+                                        key={coin.id}
+                                        className="cursor-pointer transition hover:bg-gray-100/70"
+                                        onClick={()=>{ViewDetail(coin.symbol)}}
+                                    >
+                                        <td className="px-4 py-3 font-semibold text-gray-900">
+                                            <div className="flex items-center gap-3">
+                                                <div
+                                                    className="flex h-10 w-10 items-center justify-center rounded-full bg-blue-600 text-white font-bold">
+                                                    {coin.symbol[0]}
+                                                </div>
+                                                {coin.name}
+                                            </div>
+                                        </td>
+                                        <td className="px-4 py-3 text-gray-600">{coin.symbol}</td>
+                                        <td className="px-4 py-3 text-right text-gray-900">{coin.price}</td>
+                                        <td
+                                            className={`px-4 py-3 text-right font-medium ${
+                                                coin.change.startsWith("+") ? "text-emerald-600" : "text-red-600"
+                                            }`}
+                                        >
+                                            {coin.change}
+                                        </td>
+                                        <td className="px-4 py-3 text-right text-gray-600">{coin.marketCap}</td>
+                                        <td className="px-4 py-3 text-right text-gray-600">{coin.volume}</td>
+                                    </tr>
+                                ))}
+                                </tbody>
+                            </table>
                         </div>
-                        {coin.name}
-                      </div>
-                    </td>
-                    <td className="px-4 py-3 text-gray-600">{coin.symbol}</td>
-                    <td className="px-4 py-3 text-right text-gray-900">{coin.price}</td>
-                    <td
-                      className={`px-4 py-3 text-right font-medium ${
-                        coin.change.startsWith("+") ? "text-emerald-600" : "text-red-600"
-                      }`}
-                    >
-                      {coin.change}
-                    </td>
-                    <td className="px-4 py-3 text-right text-gray-600">{coin.marketCap}</td>
-                    <td className="px-4 py-3 text-right text-gray-600">{coin.volume}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </div>
+                    </div>
+                )}
       </section>
     </main>
   );

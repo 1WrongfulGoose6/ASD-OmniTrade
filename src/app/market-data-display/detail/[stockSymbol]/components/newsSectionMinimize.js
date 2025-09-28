@@ -1,7 +1,7 @@
 'use client'
 
 import React from "react";
-import {useRightPanel} from "@/app/market-data-display/detail/hooks/useRightPanel";
+import {useRightPanel} from "@/app/market-data-display/detail/[stockSymbol]/hooks/useRightPanel";
 import {ChevronDown} from "lucide-react"; // icon for minimize
 
 export default function NewsSectionMinimize() {

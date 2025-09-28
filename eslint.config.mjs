@@ -5,7 +5,7 @@ import { defineConfig } from "eslint/config";
 
 export default defineConfig([
   { ignores: ["node_modules/**", ".next/**", "public/**", "build/**", "dist/**", "test-results/**", "coverage/**"] },
-  { files: ["**/*.{js,mjs,cjs,jsx}"], plugins: { js }, extends: ["js/recommended"], languageOptions: { globals: globals.browser } },
+  { files: ["**/*.{js,mjs,cjs,jsx}"], plugins: { js }, extends: ["js/recommended"], languageOptions: { globals: {...globals.browser, ...globals.node} } },
   {
     files: ["**/*.{js,jsx}"],
     ...pluginReact.configs.flat.recommended,

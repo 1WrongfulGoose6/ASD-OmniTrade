@@ -1,6 +1,6 @@
 import React from "react";
 import PropTypes from "prop-types";
-import {RightPanelProvider} from "@/app/market-data-display/detail/hooks/useRightPanel";
+import {RightPanelProvider} from "@/app/market-data-display/detail/[stockSymbol]/hooks/useRightPanel";
 
 Layout.propTypes = {
     children: PropTypes.node

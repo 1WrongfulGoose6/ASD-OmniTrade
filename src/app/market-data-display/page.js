@@ -1,13 +1,14 @@
-'use client'
+// app/market-data-display/page.js
+"use client";
 
 import React from "react";
 import { useState, useEffect } from "react";
-import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
+import { useRouter } from "next/navigation";
 import NavBar from "@/components/NavBar";
 
-export default function MarketDataList() {
+export default function MarketListPage() {
     const router = useRouter();
 
     // State to hold the fetched and filtered data
@@ -52,7 +53,7 @@ export default function MarketDataList() {
 
   return (
     <main className="relative min-h-screen overflow-hidden bg-gradient-to-br from-blue-600 to-blue-400 text-white">
-      {/* Wavy background */}
+      {/* waves */}
       <div className="absolute inset-0 z-0 overflow-hidden">
         <svg className="absolute top-0 left-0 h-64 w-full text-white/20" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1440 320" preserveAspectRatio="none">
           <path fill="currentColor" d="M0,128L48,133.3C96,139,192,149,288,160C384,171,480,181,576,192C672,203,768,213,864,192C960,171,1056,117,1152,117.3C1248,117,1344,171,1392,197.3L1440,224L1440,0L1392,0C1344,0,1248,0,1152,0C1056,0,960,0,864,0C768,0,672,0,576,0C480,0,384,0,288,0C192,0,96,0,48,0L0,0Z" />
@@ -62,19 +63,19 @@ export default function MarketDataList() {
         </svg>
       </div>
 
-      {/* Nav (inherits white text from main) */}
+      {/* NavBar */}
       <NavBar />
 
-      {/* Page content container */}
+      {/* content */}
       <section className="relative z-10 mx-auto w-full max-w-6xl px-6 pt-6 pb-16">
-        {/* Subheader bar */}
+        {/* subheader */}
         <div className="flex items-center justify-between rounded-2xl bg-white/15 ring-1 ring-white/20 backdrop-blur-md px-4 sm:px-6 py-3">
           <Link href="/" className="flex items-center gap-2 hover:opacity-90">
             <ArrowLeft className="h-5 w-5" />
             <span className="font-medium">Back</span>
           </Link>
           <h1 className="text-2xl font-semibold">Market Data</h1>
-          <div className="w-14" /> {/* spacer to balance layout */}
+          <div className="w-14" />
         </div>
 
                 {/* Search Bar */}

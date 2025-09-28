@@ -16,6 +16,9 @@ export default function NavBar() {
             <Link href="/market-data-display" className="hover:opacity-90">
               Stocks
             </Link>
+            <Link href="/watchlist" className="hover:opacity-90">
+              Watchlist
+            </Link>
             <Link href="/portfolio" className="hover:opacity-90">
               Portfolio
             </Link>

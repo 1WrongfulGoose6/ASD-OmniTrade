@@ -1,9 +1,12 @@
 // app/market-data-display/detail/[stockSymbol]/components/mainSection.js
+'use client';
+
 import { ArrowLeft } from "lucide-react";
 import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import GraphSection from "@/app/market-data-display/detail/[stockSymbol]/components/graphSection";
 import PropTypes from "prop-types";
+import WatchStar from "@/components/WatchStar"; // <-- NEW
 
 export default function MainSection({ stockSymbol }) {
   const [stockData, setStockData] = useState(null);
@@ -20,7 +23,6 @@ export default function MainSection({ stockSymbol }) {
     const fetchStockDetail = async () => {
       setIsLoading(true);
       setError(null);
-
       try {
         const res = await fetch(`/api/marketdata/detail/${stockSymbol}`);
         if (!res.ok) {
@@ -56,22 +58,26 @@ export default function MainSection({ stockSymbol }) {
     <div className="w-full flex flex-col h-full shadow rounded-2xl overflow-hidden gap-y-2">
       {/* Top section */}
       <div className="flex items-center justify-between p-4 px-8 border-b bg-gray-50 rounded-2xl">
-        {/* Back button */}
+        {/* Back */}
         <Link className="flex items-center gap-2 text-blue-600 hover:text-blue-800" href={"/market-data-display/"}>
           <ArrowLeft className="w-5 h-5" />
           <span className="font-medium">Back</span>
         </Link>
 
         {/* Stock Info */}
-        <div className="flex flex-row rounded-2xl gap-5">
+        <div className="flex items-center gap-5">
           <span className="text-lg font-semibold text-gray-800">
             {stockData.symbol} — {stockData.name}
           </span>
-          <span className="text-green-600 font-bold flex items-end">{stockData.currentPrice}</span>
+          <span className="text-green-600 font-bold">{stockData.currentPrice}</span>
         </div>
 
-        {/* Trade button */}
-        <div className="flex flex-row gap-4">
+        {/* Actions: WatchStar + Trade */}
+        <div className="flex items-center gap-3">
+          <WatchStar
+            symbol={stockData.symbol}
+            name={stockData.name}
+          />
           <Link
             href={{
               pathname: "/trade",
@@ -98,7 +104,6 @@ export default function MainSection({ stockSymbol }) {
           </div>
         )}
 
-        {/* Description */}
         {stockData.description ? (
           <div className="mt-6 border-t border-gray-200 pt-4">
             <p className="text-gray-700">{stockData.description}</p>

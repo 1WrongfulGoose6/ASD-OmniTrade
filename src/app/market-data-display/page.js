@@ -7,6 +7,7 @@ import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
 import { useRouter } from "next/navigation";
 import NavBar from "@/components/NavBar";
+import WatchStar from "@/components/WatchStar";
 
 export default function MarketListPage() {
     const router = useRouter();
@@ -102,6 +103,7 @@ export default function MarketListPage() {
                             <table className="w-full table-auto border-collapse">
                                 <thead>
                                 <tr className="border-b border-gray-200 text-sm uppercase tracking-wider text-gray-500">
+                                    <th className="px-4 py-3 text-left">Watch</th>
                                     <th className="px-4 py-3 text-left">Name</th>
                                     <th className="px-4 py-3 text-left">Symbol</th>
                                     <th className="px-4 py-3 text-right">Current Price</th>
@@ -117,10 +119,12 @@ export default function MarketListPage() {
                                         className="cursor-pointer transition hover:bg-gray-100/70"
                                         onClick={()=>{ViewDetail(coin.symbol)}}
                                     >
+                                        <td className="px-4 py-3" onClick={(e)=>e.stopPropagation()}>
+                                            <WatchStar symbol={coin.symbol} name={coin.name} />
+                                        </td>
                                         <td className="px-4 py-3 font-semibold text-gray-900">
                                             <div className="flex items-center gap-3">
-                                                <div
-                                                    className="flex h-10 w-10 items-center justify-center rounded-full bg-blue-600 text-white font-bold">
+                                                <div className="flex h-10 w-10 items-center justify-center rounded-full bg-blue-600 text-white font-bold">
                                                     {coin.symbol[0]}
                                                 </div>
                                                 {coin.name}

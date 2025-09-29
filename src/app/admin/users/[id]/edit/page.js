@@ -4,7 +4,7 @@ import React, { useState } from 'react';
 import NavBar from '@/components/NavBar';
 import { useRouter } from 'next/navigation';
 
-export default function EditUserPage({ params }) {
+export default function EditUserPage() {
   const [showPasswordFields, setShowPasswordFields] = useState(false);
   const router = useRouter();
 

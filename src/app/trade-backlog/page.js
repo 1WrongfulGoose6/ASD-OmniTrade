@@ -8,6 +8,7 @@ import Link from "next/link";
 import { format } from "date-fns";
 import { DayPicker } from "react-day-picker";
 import 'react-day-picker/dist/style.css';
+import {supabase} from "@/utils/DBClient";
 
 // Custom hook to detect clicks outside of a component
 const useOutsideClick = (ref, callback) => {
@@ -115,21 +116,20 @@ export default function TradeBacklog() {
     const fetchTradeBacklog = async () => {
       setIsLoading(true);
       setError(null);
+
       try {
-        // Use the new endpoint
-        const response = await fetch('/api/tradeBacklog');
+        // Query Supabase directly
+        const { data, error } = await supabase
+            .from("Trade Backlog")
+            .select("*")
+            .order("date", { ascending: false });
 
-        if (!response.ok) {
-          throw new Error(`Failed to fetch trades: ${response.status} ${response.statusText}`);
-        }
+        if (error) throw error;
 
-        const data = await response.json();
-
-        // Store both the raw data and set the displayed trades (before filters apply)
-        setAllTradesData(data);
-        setTrades(data);
+        setAllTradesData(data || []);
+        setTrades(data || []);
       } catch (err) {
-        console.error("Fetch error:", err);
+        console.error("Supabase fetch error:", err);
         setError(err.message || "Could not load trade history.");
         setAllTradesData([]);
         setTrades([]);
@@ -139,7 +139,7 @@ export default function TradeBacklog() {
     };
 
     fetchTradeBacklog();
-  }, []); // Empty dependency array means this runs once on mount
+  }, []);
 
 
   // -----------------------------------------------------------

@@ -228,7 +228,7 @@ export default function TradeBacklog() {
 
   return (
       <main
-          className="flex-col min-h-screen bg-gradient-to-br from-blue-600 to-blue-400 flex gap-4 items-center justify-center px-32"
+          className="relative min-h-screen overflow-hidden bg-gradient-to-br from-blue-600 to-blue-400 text-white"
       >
         {/* Background SVGs and NavBar (unchanged) */}
         <div className="absolute inset-0 z-0 overflow-hidden">
@@ -240,131 +240,133 @@ export default function TradeBacklog() {
           </svg>
         </div>
         <NavBar />
-        <div className="w-full flex items-center justify-between p-4 px-8 border-b bg-gray-50 rounded-2xl">
-          <Link className="flex items-center gap-2 text-blue-600 hover:text-blue-800" href={"/"}>
-            <ArrowLeft className="w-5 h-5" />
-            <span className="font-medium">Home</span>
-          </Link>
-          <h1 className="text-2xl font-semibold text-gray-700 text-center">
-            Trade Backlog
-          </h1>
-        </div>
-
-        <div className="bg-white/90 backdrop-blur-md rounded-2xl shadow-xl w-full p-8">
-          {/* Filters Section (Modified to include Export button) */}
-          <div className="flex flex-col md:flex-row justify-between items-center gap-4 mb-6">
-
-            {/* Left Side: Search Bar and Trade Type Filter */}
-            <div className="flex flex-col md:flex-row gap-4 w-full md:w-3/5">
-              {/* Search Bar */}
-              <input
-                  type="text"
-                  placeholder="Search by Asset or ID..."
-                  className="w-full px-4 py-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-blue-400 text-gray-700 shadow-sm"
-                  value={filters.searchQuery}
-                  onChange={handleSearchChange}
-              />
-              {/* Trade Type Filter */}
-              <div className="flex items-center gap-2 w-full md:w-auto">
-                <label htmlFor="tradeType" className="font-medium text-gray-700 hidden md:block">Type:</label>
-                <select
-                    id="tradeType"
-                    className="px-4 py-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-blue-400 text-gray-700 shadow-sm"
-                    value={filters.tradeType}
-                    onChange={handleTradeTypeChange}
-                >
-                  <option value="All">All</option>
-                  <option value="Buy">Buy</option>
-                  <option value="Sell">Sell</option>
-                </select>
-              </div>
-            </div>
-
-            {/* Right Side: Date Filter and Export Button */}
-            <div className="flex flex-col md:flex-row gap-4 w-full md:w-2/5 justify-end">
-              {/* Date Filter */}
-              <div className="flex items-center gap-2 w-full md:w-auto relative" ref={datePickerRef}>
-                <label htmlFor="dateRange" className="font-medium text-gray-700 hidden md:block">Date:</label>
-                <div
-                    className="relative w-full cursor-pointer flex items-center px-4 py-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-blue-400 text-gray-700 shadow-sm"
-                    onClick={() => setShowDatePicker(!showDatePicker)}
-                >
-                  <input
-                      id="dateRange"
-                      type="text"
-                      className="w-full bg-transparent outline-none cursor-pointer"
-                      placeholder="Select date range"
-                      value={
-                        filters.dateRange.from
-                            ? `${format(filters.dateRange.from, 'PP')} - ${filters.dateRange.to ? format(filters.dateRange.to, 'PP') : ''}`
-                            : ''
-                      }
-                      readOnly
-                  />
-                  <Calendar className="w-5 h-5 text-gray-400 absolute right-3" />
-                </div>
-                {/* Conditional Rendering for DayPicker */}
-                {showDatePicker && (
-                    <div className="absolute top-full right-0 z-10 mt-2 bg-white rounded-lg shadow-lg">
-                      <DayPicker
-                          mode="range"
-                          selected={filters.dateRange}
-                          onSelect={handleDateChange}
-                          showOutsideDays
-                          min={1}
-                      />
-                    </div>
-                )}
-              </div>
-
-              <button
-                  onClick={handleExportCSV} // You must define this handler
-                  className="w-full md:w-auto px-4 py-2 bg-blue-600 text-white font-semibold rounded-lg shadow-md hover:bg-blue-800 transition duration-150 focus:outline-none focus:ring-2 focus:ring-green-400"
-              >
-                Export CSV
-              </button>
-            </div>
+        <div className={'flex items-center flex-col px-32 gap-3'}>
+          <div className="w-full flex items-center justify-between p-4 px-8 border-b bg-gray-50 rounded-2xl">
+            <Link className="flex items-center gap-2 text-blue-600 hover:text-blue-800" href={"/"}>
+              <ArrowLeft className="w-5 h-5" />
+              <span className="font-medium">Home</span>
+            </Link>
+            <h1 className="text-2xl font-semibold text-gray-700 text-center">
+              Trade Backlog
+            </h1>
           </div>
-          {/* End Filters Section */}
-          <div className="overflow-x-auto">
-            <table className="w-full table-auto border-collapse">
-              <thead>
-              <tr className="text-gray-500 uppercase text-sm tracking-wider border-b border-gray-200">
-                <th className="py-3 px-4 text-left">Trade ID</th>
-                <th className="py-3 px-4 text-left">Asset</th>
-                <th className="py-3 px-4 text-left">Type</th>
-                <th className="py-3 px-4 text-right">Amount</th>
-                <th className="py-3 px-4 text-right">Status</th>
-                <th className="py-3 px-4 text-right">Date</th>
-              </tr>
-              </thead>
-              <tbody className="text-gray-700">
-              {trades.length > 0 ? (
-                  trades.map((trade) => (
-                      <tr key={trade.id} className="transition transform hover:bg-gray-100">
-                        <td className="py-4 px-4 font-medium">{trade.id}</td>
-                        <td className="py-4 px-4">{trade.asset}</td>
-                        <td
-                            className={`py-4 px-4 font-semibold ${
-                                trade.type === "Buy" ? "text-green-600" : "text-red-600"
-                            }`}
-                        >
-                          {trade.type}
-                        </td>
-                        <td className="py-4 px-4 text-right">{trade.amount}</td>
-                        <td className="py-4 px-4 text-right">{trade.status}</td>
-                        <td className="py-4 px-4 text-right">{trade.date}</td>
-                      </tr>
-                  ))
-              ) : (
-                  <tr>
-                    <td colSpan="6" className="py-4 text-center text-gray-500">
-                      No trades found matching your criteria.
-                    </td>
-                  </tr>
-              )}
-              </tbody>
-            </table>
+
+          <div className="bg-white/90 backdrop-blur-md rounded-2xl shadow-xl w-full p-8">
+            {/* Filters Section (Modified to include Export button) */}
+            <div className="flex flex-col md:flex-row justify-between items-center gap-4 mb-6">
+
+              {/* Left Side: Search Bar and Trade Type Filter */}
+              <div className="flex flex-col md:flex-row gap-4 w-full md:w-3/5">
+                {/* Search Bar */}
+                <input
+                    type="text"
+                    placeholder="Search by Asset or ID..."
+                    className="w-full px-4 py-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-blue-400 text-gray-700 shadow-sm"
+                    value={filters.searchQuery}
+                    onChange={handleSearchChange}
+                />
+                {/* Trade Type Filter */}
+                <div className="flex items-center gap-2 w-full md:w-auto">
+                  <label htmlFor="tradeType" className="font-medium text-gray-700 hidden md:block">Type:</label>
+                  <select
+                      id="tradeType"
+                      className="px-4 py-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-blue-400 text-gray-700 shadow-sm"
+                      value={filters.tradeType}
+                      onChange={handleTradeTypeChange}
+                  >
+                    <option value="All">All</option>
+                    <option value="Buy">Buy</option>
+                    <option value="Sell">Sell</option>
+                  </select>
+                </div>
+              </div>
+
+              {/* Right Side: Date Filter and Export Button */}
+              <div className="flex flex-col md:flex-row gap-4 w-full md:w-2/5 justify-end">
+                {/* Date Filter */}
+                <div className="flex items-center gap-2 w-full md:w-auto relative" ref={datePickerRef}>
+                  <label htmlFor="dateRange" className="font-medium text-gray-700 hidden md:block">Date:</label>
+                  <div
+                      className="relative w-full cursor-pointer flex items-center px-4 py-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-blue-400 text-gray-700 shadow-sm"
+                      onClick={() => setShowDatePicker(!showDatePicker)}
+                  >
+                    <input
+                        id="dateRange"
+                        type="text"
+                        className="w-full bg-transparent outline-none cursor-pointer"
+                        placeholder="Select date range"
+                        value={
+                          filters.dateRange.from
+                              ? `${format(filters.dateRange.from, 'PP')} - ${filters.dateRange.to ? format(filters.dateRange.to, 'PP') : ''}`
+                              : ''
+                        }
+                        readOnly
+                    />
+                    <Calendar className="w-5 h-5 text-gray-400 absolute right-3" />
+                  </div>
+                  {/* Conditional Rendering for DayPicker */}
+                  {showDatePicker && (
+                      <div className="absolute top-full right-0 z-10 mt-2 bg-white rounded-lg shadow-lg">
+                        <DayPicker
+                            mode="range"
+                            selected={filters.dateRange}
+                            onSelect={handleDateChange}
+                            showOutsideDays
+                            min={1}
+                        />
+                      </div>
+                  )}
+                </div>
+
+                <button
+                    onClick={handleExportCSV} // You must define this handler
+                    className="w-full md:w-auto px-4 py-2 bg-blue-600 text-white font-semibold rounded-lg shadow-md hover:bg-blue-800 transition duration-150 focus:outline-none focus:ring-2 focus:ring-green-400"
+                >
+                  Export CSV
+                </button>
+              </div>
+            </div>
+            {/* End Filters Section */}
+            <div className="overflow-x-auto">
+              <table className="w-full table-auto border-collapse">
+                <thead>
+                <tr className="text-gray-500 uppercase text-sm tracking-wider border-b border-gray-200">
+                  <th className="py-3 px-4 text-left">Trade ID</th>
+                  <th className="py-3 px-4 text-left">Asset</th>
+                  <th className="py-3 px-4 text-left">Type</th>
+                  <th className="py-3 px-4 text-right">Amount</th>
+                  <th className="py-3 px-4 text-right">Status</th>
+                  <th className="py-3 px-4 text-right">Date</th>
+                </tr>
+                </thead>
+                <tbody className="text-gray-700">
+                {trades.length > 0 ? (
+                    trades.map((trade) => (
+                        <tr key={trade.id} className="transition transform hover:bg-gray-100">
+                          <td className="py-4 px-4 font-medium">{trade.id}</td>
+                          <td className="py-4 px-4">{trade.asset}</td>
+                          <td
+                              className={`py-4 px-4 font-semibold ${
+                                  trade.type === "Buy" ? "text-green-600" : "text-red-600"
+                              }`}
+                          >
+                            {trade.type}
+                          </td>
+                          <td className="py-4 px-4 text-right">{trade.amount}</td>
+                          <td className="py-4 px-4 text-right">{trade.status}</td>
+                          <td className="py-4 px-4 text-right">{trade.date}</td>
+                        </tr>
+                    ))
+                ) : (
+                    <tr>
+                      <td colSpan="6" className="py-4 text-center text-gray-500">
+                        No trades found matching your criteria.
+                      </td>
+                    </tr>
+                )}
+                </tbody>
+              </table>
+            </div>
           </div>
         </div>
       </main>

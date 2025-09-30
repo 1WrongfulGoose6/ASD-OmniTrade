@@ -25,6 +25,9 @@ export default function NavBar() {
             <Link href="/profile" className="hover:opacity-90">
               Profile
             </Link>
+            <Link href="/trade-backlog" className="hover:opacity-90">
+              History
+            </Link>
             <Link href="/settings" className="hover:opacity-90">
               Settings
             </Link>

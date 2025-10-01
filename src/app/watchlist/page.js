@@ -11,43 +11,41 @@ import WaveBackground from '@/components/WaveBackground';
 export default function WatchlistPage() {
   const router = useRouter();
 
-  const [watch, setWatch] = React.useState([]);        // [{symbol, name}]
-  const [rows, setRows] = React.useState([]);          // market rows filtered by watchlist
+  // ✅ state (includes the missing setWatch)
+  const [watch, setWatch] = React.useState([]);   // [{symbol, name}]
+  const [rows, setRows] = React.useState([]);     // market rows filtered by watchlist
   const [loading, setLoading] = React.useState(true);
   const [error, setError] = React.useState(null);
 
-  // Load/sync watchlist from helper
+  // ✅ Load watchlist from server (per-user)
   React.useEffect(() => {
     let off = false;
 
-    (async () => {
-      const mod = await import('@/lib/watchlist');
-      if (off) return;
-
-      const refresh = () => setWatch(mod.readWatchlist());
-      refresh();                  // 1) show whatever's in localStorage immediately
-
-      // 2) pull latest from DB -> writes to localStorage -> fires watchlist:changed
-      //    This keeps your optimistic UX but makes it durable
+    const load = async () => {
       try {
-        await mod.syncFromServer();
-        refresh();                // 3) re-read after sync (optional; the event also updates it)
-      } catch {}
+        const res = await fetch('/api/watchlist', { cache: 'no-store' });
+        const data = await res.json().catch(() => ({}));
+        const items = Array.isArray(data.items) ? data.items : [];
+        const list = items.map(i => ({ symbol: i.symbol, name: i.name || i.symbol }));
+        if (!off) setWatch(list);
+      } catch {
+        if (!off) setWatch([]);        // ← this was throwing when setWatch wasn't defined
+      }
+    };
 
-      const onChange = () => refresh();
-      window.addEventListener('watchlist:changed', onChange);
-      window.addEventListener('storage', onChange);
+    load();
 
-      return () => {
-        window.removeEventListener('watchlist:changed', onChange);
-        window.removeEventListener('storage', onChange);
-      };
-    })();
+    // refresh when any star toggles elsewhere
+    const onChanged = () => load();
+    window.addEventListener('watchlist:changed', onChanged);
 
-  return () => { off = true; };
-}, []);
+    return () => {
+      off = true;
+      window.removeEventListener('watchlist:changed', onChanged);
+    };
+  }, []);
 
-  // Fetch market data and filter to watchlist symbols
+  // ✅ Fetch market data and filter to watchlist symbols
   React.useEffect(() => {
     let cancelled = false;
 
@@ -55,9 +53,14 @@ export default function WatchlistPage() {
       setLoading(true);
       setError(null);
       try {
+        if (!watch.length) {
+          if (!cancelled) { setRows([]); setLoading(false); }
+          return;
+        }
+
         const res = await fetch('/api/marketdata', { cache: 'no-store' });
         if (!res.ok) throw new Error(`marketdata ${res.status}`);
-        const all = await res.json(); // expects array like your MarketListPage uses
+        const all = await res.json();
 
         const setSymbols = new Set(watch.map(w => (w.symbol || '').toUpperCase()));
         const filtered = (Array.isArray(all) ? all : []).filter(
@@ -79,20 +82,15 @@ export default function WatchlistPage() {
 
   return (
     <main className="relative min-h-screen overflow-hidden bg-gradient-to-br from-blue-600 to-blue-400 text-white">
-      {/* bg waves */}
-      <div className="absolute inset-0 z-0 overflow-hidden">
-        <WaveBackground />
-      </div>
-
+      <WaveBackground />
       <NavBar />
 
       <section className="relative z-10 mx-auto w-full max-w-6xl px-6 pt-6 pb-16">
-        {/* subheader */}
         <div className="mb-6 flex items-center justify-between rounded-2xl bg-white/15 ring-1 ring-white/20 backdrop-blur-md px-4 sm:px-6 py-3">
           <h1 className="text-2xl font-semibold">Watchlist</h1>
+          <Link href="/market-data-display" className="text-sm underline">Browse stocks →</Link>
         </div>
 
-        {/* empty / loading / error states */}
         {loading && (
           <div className="rounded-2xl bg-white/90 p-6 text-gray-900">Loading…</div>
         )}
@@ -105,7 +103,6 @@ export default function WatchlistPage() {
           </div>
         )}
 
-        {/* table */}
         {!loading && !error && watch.length > 0 && (
           <div className="mt-2 rounded-2xl bg-white/90 backdrop-blur-md p-6 shadow-xl text-gray-900">
             <div className="overflow-x-auto">
@@ -127,11 +124,9 @@ export default function WatchlistPage() {
                       className="cursor-pointer transition hover:bg-gray-100/70"
                       onClick={() => viewDetail(row.symbol)}
                     >
-                      {/* Star (no separate Remove button) */}
-                      <td className="px-4 py-3">
+                      <td className="px-4 py-3" onClick={(e) => e.stopPropagation()}>
                         <WatchStar symbol={row.symbol} name={row.name} />
                       </td>
-
                       <td className="px-4 py-3 font-semibold text-gray-900">
                         <div className="flex items-center gap-3">
                           <div className="flex h-10 w-10 items-center justify-center rounded-full bg-blue-600 text-white font-bold">
@@ -140,9 +135,10 @@ export default function WatchlistPage() {
                           {row.name || row.symbol}
                         </div>
                       </td>
-
                       <td className="px-4 py-3 text-gray-600">{row.symbol}</td>
-                      <td className="px-4 py-3 text-right text-gray-900">{row.price ?? row.currentPrice ?? '-'}</td>
+                      <td className="px-4 py-3 text-right text-gray-900">
+                        {row.price ?? row.currentPrice ?? '—'}
+                      </td>
                       <td
                         className={`px-4 py-3 text-right font-medium ${
                           (row.change || '').toString().trim().startsWith('+')
@@ -150,9 +146,11 @@ export default function WatchlistPage() {
                             : 'text-red-600'
                         }`}
                       >
-                        {row.change ?? row.change24h ?? '-'}
+                        {row.change ?? row.change24h ?? '—'}
                       </td>
-                      <td className="px-4 py-3 text-right text-gray-600">{row.marketCap ?? '-'}</td>
+                      <td className="px-4 py-3 text-right text-gray-600">
+                        {row.marketCap ?? '—'}
+                      </td>
                     </tr>
                   ))}
                 </tbody>

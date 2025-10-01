@@ -1,7 +1,10 @@
-// app/api/news/route.js
+// src/app/api/marketdata/route.js
 import { NextResponse } from "next/server";
-import { getMarketNews } from "@/lib/finnhub/news";
-import { fetchWithBackoff } from "@/lib/http/fetchWithBackoff";
+import { fetchJsonCached } from "@/lib/mcache";
+
+const FINNHUB_API_URL = "https://finnhub.io/api/v1";
+const API_KEY = process.env.FINNHUB_API_KEY;
+const TTL = 60_000;
 
 export async function GET(request) {
   try {
@@ -9,13 +12,14 @@ export async function GET(request) {
     const category = searchParams.get("category") ?? "general";
     const limit = Number(searchParams.get("limit") ?? 8);
 
-    // If getMarketNews uses fetch internally, inject the helper there.
-    const items = await getMarketNews(category, { limit, fetchFn: fetchWithBackoff });
+    const url = `${FINNHUB_API_URL}/news?category=${encodeURIComponent(category)}&token=${API_KEY}`;
+    const r = await fetchJsonCached(url, { ttlMs: TTL });
 
-    const news = items.map(n => ({
-      id: n.id ?? `${n.source}-${n.datetime}`,
-      headline: n.headline,
-      summary: n.summary,
+    const items = Array.isArray(r.data) ? r.data.slice(0, limit) : [];
+    const news = items.map((n, i) => ({
+      id: n.id ?? `${n.source ?? "src"}-${n.datetime ?? i}`,
+      headline: n.headline ?? n.title ?? "",
+      summary: n.summary ?? "",
       url: n.url,
       image: n.image,
       source: n.source,
@@ -23,10 +27,8 @@ export async function GET(request) {
       category,
     }));
 
-    console.info(`[news] Delivered ${news.length} items (category=${category}).`);
     return NextResponse.json({ news });
   } catch (e) {
-    console.error("[news] Failure:", e?.message);
-    return NextResponse.json({ error: e.message }, { status: 500 });
+    return NextResponse.json({ error: e.message || "news_failed" }, { status: 500 });
   }
 }

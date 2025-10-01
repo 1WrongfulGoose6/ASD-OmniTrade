@@ -91,9 +91,13 @@ stages:
 
           - script: npm run test:ci
             displayName: 'Run Jest Tests (CI)'
+            env:
+              CI: true
 
-          - script: npm run test:e2e
-            displayName: 'Run Playwright E2E Tests'
+          - script: npm run test:e2e:ci
+            displayName: 'Run Playwright E2E Tests (CI)'
+            env:
+              CI: true
 
           - task: PublishTestResults@2
             displayName: 'Publish Jest Test Results'

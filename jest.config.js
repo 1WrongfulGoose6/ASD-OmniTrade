@@ -4,4 +4,8 @@ module.exports = {
   transform: {
     '^.+\\.(js|jsx|ts|tsx)$': ['babel-jest', { configFile: './babel.config.jest.js' }],
   },
+  moduleNameMapper: {
+    '^@/(.*)$': '<rootDir>/src/$1',
+    '^.+\\.(css|less|sass|scss)$': 'identity-obj-proxy',
+  },
 };

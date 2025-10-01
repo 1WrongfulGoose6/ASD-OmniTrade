@@ -1,100 +1,144 @@
-// app/trade/TradePageClient.js
-"use client"; // client component
+// src/app/trade/TradePageClient.js
+"use client";
 
 import React, { useState, useEffect } from "react";
-import GraphSection from "@/app/market-data-display/detail/components/graphSection";
-import OrderForm from "@/components/OrderForm";
 import { useSearchParams } from "next/navigation";
+import NavBar from "@/components/NavBar";
+import WaveBackground from "@/components/WaveBackground";
+import GraphSection from "@/app/market-data-display/detail/[stockSymbol]/components/graphSection";
+import OrderForm from "@/components/OrderForm";
+
+// "$517.95" -> 517.95 (number) | invalid -> null
+function toNum(v) {
+  if (typeof v === "number") return Number.isFinite(v) ? v : null;
+  if (v == null) return null;
+  const n = Number(String(v).replace(/[^\d.-]/g, ""));
+  return Number.isFinite(n) ? n : null;
+}
 
 export default function TradePageClient() {
   const searchParams = useSearchParams();
 
   const [symbol, setSymbol] = useState(null);
   const [name, setName] = useState(null);
-  const [price, setPrice] = useState(null);
+  const [price, setPrice] = useState(null);          // numeric for OrderForm
+  const [series, setSeries] = useState([]);          // [{ time, price }]
+  const [loading, setLoading] = useState(true);
+  const [err, setErr] = useState(null);
 
+  // Read query params exactly once per URL change
   useEffect(() => {
-    setSymbol(searchParams?.get("symbol") ?? "AAPL");
-    setName(searchParams?.get("name") ?? "Apple Inc.");
-    setPrice(searchParams?.get("price") ?? "65,500");
+    const s = (searchParams?.get("symbol") || "AAPL").toUpperCase();
+    const n = searchParams?.get("name") || null;
+    const rawPrice = searchParams?.get("price");
+    const qPrice = toNum(rawPrice);
+
+    setSymbol(s);
+    setName(n);
+    if (qPrice != null) setPrice(qPrice);
   }, [searchParams]);
 
-  // Sample pending orders
-  const [orders] = useState([
-    { symbol: "BTC/AUD", position: "Buy", entryPrice: 65800, audCost: 131600 },
-    { symbol: "ETH/AUD", position: "Sell", entryPrice: 4500, audCost: 9000 },
-  ]);
+  // Fetch detail for chart + authoritative price
+  useEffect(() => {
+    if (!symbol) return;
+    let off = false;
 
-  if (!symbol || !name || !price) return null; // wait for client-side hydration
+    (async () => {
+      setLoading(true);
+      setErr(null);
+      try {
+        const res = await fetch(
+          `/api/marketdata/detail/${encodeURIComponent(symbol)}`,
+          { cache: "no-store" }
+        );
+        const data = await res.json().catch(() => ({}));
+        if (!res.ok) {
+          throw new Error(data?.error || `Failed ${res.status}`);
+        }
+        if (off) return;
+
+        // graph
+        const points = Array.isArray(data.historicalData)
+          ? data.historicalData
+          : [];
+        setSeries(points);
+
+        // prefer API price over query price
+        const apiNum = toNum(data.currentPrice);
+        if (apiNum != null) setPrice(apiNum);
+
+        if (!name && data.name) setName(data.name);
+      } catch (e) {
+        if (!off) setErr(e.message || "Failed to load chart");
+      } finally {
+        if (!off) setLoading(false);
+      }
+    })();
+
+    return () => {
+      off = true;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [symbol]);
+
+  if (!symbol) return null;
 
   return (
-    <main className="min-h-screen bg-gradient-to-br from-blue-500 to-blue-200 p-6">
-      <div className="mx-auto w-full max-w-[1200px] flex flex-col md:flex-row gap-6">
-        {/* Left: Chart area */}
-        <section className="flex-1 flex flex-col gap-4">
-          {/* Mini-summary */}
-          <div className="relative bg-white/80 rounded-2xl p-4 shadow-sm flex flex-col items-center">
-            {/* Back button */}
-            <a
-              href="/market-data-display/detail"
-              className="absolute top-2 left-4 text-blue-600 hover:underline"
-            >
-              ← Back
-            </a>
+    <main className="relative min-h-screen overflow-hidden bg-gradient-to-br from-blue-600 to-blue-400 text-white">
+      <WaveBackground />
+      <NavBar />
 
-            {/* Centered symbol & price */}
-            <div className="text-center">
-              <div className="text-sm text-gray-500">{symbol} • {name}</div>
-              <div className="text-2xl font-semibold text-gray-800">${price}</div>
+      <section className="relative z-10 mx-auto w-full max-w-7xl px-6 pt-6 pb-16">
+        <div className="flex flex-col md:flex-row gap-6">
+          {/* Left: chart + summary */}
+          <section className="flex-1 flex flex-col gap-4">
+            {/* Mini header */}
+            <div className="relative bg-white/70 rounded-2xl p-4 shadow-sm flex flex-col items-center text-gray-800">
+              <a
+                href="/market-data-display/detail"
+                className="absolute top-2 left-4 text-blue-600 hover:underline"
+              >
+                ← Back
+              </a>
+              <div className="text-center">
+                <div className="text-sm text-gray-500">
+                  {symbol}
+                  {name ? ` • ${name}` : ""}
+                </div>
+                <div className="text-2xl font-semibold">
+                  {price != null ? `$${price.toFixed(2)}` : "—"}
+                </div>
+              </div>
             </div>
 
-            {/* Day change info */}
-            <div className="text-center mt-2">
-              <div className="text-green-600 font-semibold">+0.75%</div>
-              <div className="text-sm text-gray-500">Day high • 65,800 • low 64,000</div>
+            {/* Chart */}
+            <div className="bg-blue-50 rounded-2xl shadow-lg p-4 h-[35vh] md:h-[30vh] overflow-hidden">
+              {loading ? (
+                <div className="h-full grid place-items-center text-gray-600">
+                  Loading chart…
+                </div>
+              ) : err ? (
+                <div className="h-full grid place-items-center text-red-600">
+                  {err}
+                </div>
+              ) : series.length ? (
+                <GraphSection data={series} />
+              ) : (
+                <div className="h-full grid place-items-center text-gray-600">
+                  No chart data.
+                </div>
+              )}
             </div>
-          </div>
+          </section>
 
-          {/* Chart card */}
-          <div className="bg-white rounded-2xl shadow-lg p-4 h-[35vh] md:h-[30vh] overflow-hidden">
-            <GraphSection />
-          </div>
-
-          {/* Pending Orders Table */}
-          <div className="bg-white rounded-2xl shadow-lg p-4 mt-4 overflow-x-auto">
-            <h3 className="text-lg font-semibold mb-2 text-gray-800">Pending Orders</h3>
-            <table className="w-full text-left border-collapse">
-              <thead>
-                <tr className="border-b border-gray-300 text-gray-800">
-                  <th className="py-2 px-3">Symbol</th>
-                  <th className="py-2 px-3">Position</th>
-                  <th className="py-2 px-3">Entry Price</th>
-                  <th className="py-2 px-3">AUD Cost</th>
-                </tr>
-              </thead>
-              <tbody>
-                {orders.map((order, idx) => (
-                  <tr key={idx} className="border-b border-gray-200 hover:bg-gray-50 text-gray-800">
-                    <td className="py-2 px-3">{order.symbol}</td>
-                    <td className={`py-2 px-3 font-semibold ${order.position === "Buy" ? "text-green-600" : "text-red-600"}`}>
-                      {order.position}
-                    </td>
-                    <td className="py-2 px-3">{order.entryPrice.toLocaleString()}</td>
-                    <td className="py-2 px-3">{order.audCost.toLocaleString()}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </section>
-
-        {/* Right: Order form */}
-        <aside className="w-full max-w-md">
-          <div className="sticky top-8">
-            <OrderForm />
-          </div>
-        </aside>
-      </div>
+          {/* Right: order form */}
+          <aside className="w-full max-w-md">
+            <div className="sticky top-8">
+              <OrderForm symbol={symbol} price={price} />
+            </div>
+          </aside>
+        </div>
+      </section>
     </main>
   );
 }

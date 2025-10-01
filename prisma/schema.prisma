@@ -1,0 +1,106 @@
+// prisma/schema.prisma
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+model User {
+  id           Int        @id @default(autoincrement())
+  name         String?
+  email        String     @unique
+  passwordHash String
+  createdAt    DateTime   @default(now())
+  blacklisted  Boolean    @default(false)
+
+  // Relations
+  trades       Trade[]
+  watchlist    Watchlist[]
+  bookmarks    Bookmark[]
+  alerts       Alert[]
+  deposits     Deposit[]
+}
+
+model Trade {
+  id        Int      @id @default(autoincrement())
+  userId    Int
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  symbol    String
+  side      Side
+  qty       Float
+  price     Float
+  status    String   @default("FILLED") // FILLED | PENDING | CANCELLED
+  createdAt DateTime @default(now())
+
+  @@index([userId])
+  @@index([symbol])
+  @@index([createdAt])
+}
+
+enum Side {
+  BUY
+  SELL
+}
+
+model Watchlist {
+  id        Int      @id @default(autoincrement())
+  userId    Int
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  symbol    String
+  createdAt DateTime @default(now())
+
+  // A user can only star a given symbol once
+  @@unique([userId, symbol])
+  @@index([userId])
+  @@index([symbol])
+}
+
+model Bookmark {
+  id        Int      @id @default(autoincrement())
+  userId    Int
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  articleId String
+  title     String?
+  url       String?
+  createdAt DateTime @default(now())
+
+  // A user can only save the same article once
+  @@unique([userId, articleId])
+  @@index([userId])
+  @@index([articleId])
+}
+
+model Alert {
+  id        Int      @id @default(autoincrement())
+  userId    Int
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  symbol    String
+  operator  String   // ">" "<" ">=" "<=" "=="
+  threshold Float
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+
+  @@index([userId])
+  @@index([symbol])
+  @@index([isActive])
+}
+
+// Optional: persist deposits/cash flow
+model Deposit {
+  id        Int      @id @default(autoincrement())
+  userId    Int
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  amount    Float
+  createdAt DateTime @default(now())
+
+  @@index([userId])
+}

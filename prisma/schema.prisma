@@ -15,6 +15,7 @@ model User {
   email        String     @unique
   passwordHash String
   createdAt    DateTime   @default(now())
+  blacklisted  Boolean    @default(false)
 
   // Relations
   trades       Trade[]
@@ -22,7 +23,6 @@ model User {
   bookmarks    Bookmark[]
   alerts       Alert[]
   deposits     Deposit[]
-  tradeBacklog TradeBacklog[]
 }
 
 model Trade {
@@ -103,24 +103,4 @@ model Deposit {
   createdAt DateTime @default(now())
 
   @@index([userId])
-}
-
-enum BacklogStatus {
-    Canceled
-    Completed
-    Failed
-}
-
-model TradeBacklog {
-  id      Int      @id @default(autoincrement())
-  asset   String   // from "as..."
-  userId  Int
-  user    User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  type    Side
-  amount  Float
-  status  BacklogStatus
-  date    DateTime @default(now())
-
-  @@index([userId])
-  @@index([type])
 }

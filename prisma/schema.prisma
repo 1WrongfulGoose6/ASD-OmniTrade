@@ -10,25 +10,26 @@ generator client {
 }
 
 model User {
-  id           Int        @id @default(autoincrement())
+  id           Int      @id @default(autoincrement())
   name         String?
-  email        String     @unique
+  email        String   @unique
   passwordHash String
-  createdAt    DateTime   @default(now())
-  blacklisted  Boolean    @default(false)
+  createdAt    DateTime @default(now())
+  blacklisted  Boolean  @default(false)
 
   // Relations
-  trades       Trade[]
-  watchlist    Watchlist[]
-  bookmarks    Bookmark[]
-  alerts       Alert[]
-  deposits     Deposit[]
+  trades        Trade[]
+  watchlist     Watchlist[]
+  bookmarks     Bookmark[]
+  alerts        Alert[]
+  deposits      Deposit[]
+  tradeBacklogs TradeBacklog[]
 }
 
 model Trade {
-  id        Int      @id @default(autoincrement())
-  userId    Int
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  id     Int  @id @default(autoincrement())
+  userId Int
+  user   User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   symbol    String
   side      Side
@@ -48,9 +49,9 @@ enum Side {
 }
 
 model Watchlist {
-  id        Int      @id @default(autoincrement())
-  userId    Int
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  id     Int  @id @default(autoincrement())
+  userId Int
+  user   User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   symbol    String
   createdAt DateTime @default(now())
@@ -62,9 +63,9 @@ model Watchlist {
 }
 
 model Bookmark {
-  id        Int      @id @default(autoincrement())
-  userId    Int
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  id     Int  @id @default(autoincrement())
+  userId Int
+  user   User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   articleId String
   title     String?
@@ -78,12 +79,12 @@ model Bookmark {
 }
 
 model Alert {
-  id        Int      @id @default(autoincrement())
-  userId    Int
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  id     Int  @id @default(autoincrement())
+  userId Int
+  user   User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   symbol    String
-  operator  String   // ">" "<" ">=" "<=" "=="
+  operator  String // ">" "<" ">=" "<=" "=="
   threshold Float
   isActive  Boolean  @default(true)
   createdAt DateTime @default(now())
@@ -93,11 +94,25 @@ model Alert {
   @@index([isActive])
 }
 
-// Optional: persist deposits/cash flow
+model TradeBacklog {
+  id     Int  @id @default(autoincrement())
+  userId Int
+  user   User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  asset  String
+  type   String // "Buy" | "Sell"
+  amount Float
+  status String   @default("FILLED")
+  date   DateTime @default(now())
+
+  @@index([userId])
+  @@index([date])
+}
+
 model Deposit {
-  id        Int      @id @default(autoincrement())
-  userId    Int
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  id     Int  @id @default(autoincrement())
+  userId Int
+  user   User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   amount    Float
   createdAt DateTime @default(now())

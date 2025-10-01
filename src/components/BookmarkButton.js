@@ -4,36 +4,18 @@
 import React from 'react';
 import { Bookmark, BookmarkCheck } from 'lucide-react';
 import PropTypes from 'prop-types';
-
-function keyFor(uid) {
-  return uid ? `omni.bookmarks.v1.u${uid}` : 'omni.bookmarks.v1.anon';
-}
-function readStore(uid) {
-  try { return JSON.parse(localStorage.getItem(keyFor(uid)) || '[]'); } catch { return []; }
-}
-function writeStore(uid, list) {
-  localStorage.setItem(keyFor(uid), JSON.stringify(list));
-}
+import { read as readStore, write as writeStore, getUid } from '@/lib/bookmarksStore';
 
 export default function BookmarkButton({ item, onChange }) {
   const [saved, setSaved] = React.useState(false);
-  const [uid, setUid] = React.useState(null); // current user id for namespacing
+  const [uid, setUid] = React.useState(null);
 
-  // get current user id once
   React.useEffect(() => {
     let alive = true;
-    (async () => {
-      try {
-        const res = await fetch('/api/auth/me', { cache: 'no-store' });
-        if (!res.ok) throw new Error('auth');
-        const me = await res.json();
-        if (alive) setUid(me?.id ?? null);
-      } catch { setUid(null); }
-    })();
+    (async () => { if (alive) setUid(await getUid()); })();
     return () => { alive = false; };
   }, []);
 
-  // reflect whether this article is saved for this user
   React.useEffect(() => {
     const list = readStore(uid);
     setSaved(list.some((b) => String(b.id) === String(item.id)));

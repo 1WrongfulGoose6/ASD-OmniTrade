@@ -123,11 +123,11 @@ stages:
               testResultsFiles: 'test-results/**/*.xml'
               failTaskOnFailedTests: true
 
-          - task: PublishCodeCoverageResults@1
+          - task: PublishCodeCoverageResults@2
             displayName: 'Publish Code Coverage Results'
             inputs:
-              codeCoverageTool: 'Cobertura'
               summaryFileLocation: 'coverage/cobertura-coverage.xml'
+              pathToSources: 'src/'
               reportDirectory: 'coverage'
               failIfCoverageEmpty: false
 

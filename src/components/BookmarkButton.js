@@ -51,7 +51,9 @@ export default function BookmarkButton({ item, onChange }) {
         const u = new URL('/api/bookmarks', window.location.origin);
         u.searchParams.set('articleId', String(item.id));
         await fetch(u, { method: 'DELETE' });
-      } catch {}
+      } catch (err) {
+        console.error('Failed to delete bookmark:', err);
+      }
     } else {
       const toSave = {
         id: String(item.id),
@@ -74,7 +76,9 @@ export default function BookmarkButton({ item, onChange }) {
             url: item.url,
           }),
         });
-      } catch {}
+      } catch (err) {
+        console.error('Failed to save bookmark:', err);
+      }
     }
 
     onChange?.();

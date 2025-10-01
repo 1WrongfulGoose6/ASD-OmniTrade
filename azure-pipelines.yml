@@ -33,7 +33,7 @@ stages:
             displayName: 'Run ESLint'
 
       - job: Test
-        displayName: 'Run Unit Tests'
+        displayName: 'Run Tests'
         steps:
           - task: UseNode@1
             inputs:
@@ -51,11 +51,24 @@ stages:
             displayName: 'Install Dependencies'
             condition: ne(variables.NPM_CACHE_RESTORED, 'true')
 
+          - script: npx playwright install --with-deps
+            displayName: 'Install Playwright Browsers'
+
           - script: npm run test:ci
             displayName: 'Run Jest Tests (CI)'
 
+          - script: npm run test:e2e
+            displayName: 'Run Playwright E2E Tests'
+
           - task: PublishTestResults@2
-            displayName: 'Publish JUnit Test Results'
+            displayName: 'Publish Jest Test Results'
+            inputs:
+              testResultsFormat: 'JUnit'
+              testResultsFiles: 'test-results/**/*.xml'
+              failTaskOnFailedTests: true
+
+          - task: PublishTestResults@2
+            displayName: 'Publish Playwright Test Results'
             inputs:
               testResultsFormat: 'JUnit'
               testResultsFiles: 'test-results/**/*.xml'

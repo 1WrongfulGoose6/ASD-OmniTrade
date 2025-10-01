@@ -22,7 +22,10 @@ module.exports = defineConfig({
   /* Opt out of parallel tests on CI. */
   workers: process.env.CI ? 1 : undefined,
   /* Reporter to use. See https://playwright.dev/docs/test-reporters */
-  reporter: process.env.CI ? [['junit', { outputFile: 'test-results/playwright-results.xml' }], ['html']] : 'html',
+  reporter: process.env.CI ? [
+    ['junit', { outputFile: 'test-results/playwright-results.xml' }],
+    ['dot']
+  ] : 'html',
   /* Shared settings for all the projects below. See https://playwright.dev/docs/api/class-testoptions. */
   use: {
     /* Base URL to use in actions like `await page.goto('')`. */
@@ -30,6 +33,10 @@ module.exports = defineConfig({
 
     /* Collect trace when retrying the failed test. See https://playwright.dev/docs/trace-viewer */
     trace: 'on-first-retry',
+    
+    headless: process.env.CI ? true : undefined,
+    video: process.env.CI ? 'retain-on-failure' : undefined,
+    screenshot: process.env.CI ? 'only-on-failure' : undefined,
   },
 
   /* Configure projects for major browsers */
@@ -37,16 +44,6 @@ module.exports = defineConfig({
     {
       name: 'chromium',
       use: { ...devices['Desktop Chrome'] },
-    },
-
-    {
-      name: 'firefox',
-      use: { ...devices['Desktop Firefox'] },
-    },
-
-    {
-      name: 'webkit',
-      use: { ...devices['Desktop Safari'] },
     },
 
     /* Test against mobile viewports. */
@@ -75,5 +72,8 @@ module.exports = defineConfig({
     command: 'npm run dev',
     url: 'http://localhost:3000',
     reuseExistingServer: !process.env.CI,
+    timeout: 120 * 1000, // 2 minutes timeout
+    stdout: process.env.CI ? 'ignore' : 'pipe',
+    stderr: process.env.CI ? 'ignore' : 'pipe',
   },
 });

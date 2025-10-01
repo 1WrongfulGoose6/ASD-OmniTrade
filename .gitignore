@@ -37,3 +37,9 @@ node_modules
 /blob-report/
 /playwright/.cache/
 /playwright/.auth/
+
+# Jest Coverage
+/coverage/
+*.lcov
+
+.github/

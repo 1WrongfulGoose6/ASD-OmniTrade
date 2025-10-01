@@ -1,12 +1,9 @@
-// prisma/seed.js
 const { PrismaClient } = require('@prisma/client')
 const bcrypt = require('bcrypt'); //for hashing
 const prisma = new PrismaClient()
 
 async function main() {
 
-
-    // Create an admin
     const adminPassword = await bcrypt.hash("admin123", 10);
     const admin = await prisma.user.create({
         data: {
@@ -15,23 +12,18 @@ async function main() {
         passwordHash: adminPassword, 
         },
     })
-    console.log("✅ Created admin:", admin.email)
+    console.log("Created admin:", admin.email)
 
-
-
-
-    // Create a default user
     const user = await prisma.user.create({
         data: {
             name: "Henry",
             email: "henry@example.com",
-            passwordHash: "henry123", // in real use, hash it!
+            passwordHash: "henry123",
         },
     })
 
-    console.log("✅ Created user:", user.email)
+    console.log("Created user:", user.email)
 
-    // Create a trade for that user
     await prisma.trade.create({
         data: {
             userId: user.id,
@@ -43,7 +35,6 @@ async function main() {
         },
     })
 
-    // Create a trade backlog entry for that user
     await prisma.tradeBacklog.create({
         data: {
             userId: user.id,
@@ -54,7 +45,7 @@ async function main() {
         },
     })
 
-    console.log("✅ Seed data inserted")
+    console.log("Seed data inserted")
 }
 
 main()

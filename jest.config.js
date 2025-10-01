@@ -17,4 +17,22 @@ module.exports = {
     '/tests/',
     '.*\\.spec\\.(ts|js)$'
   ],
+  collectCoverage: true,
+  collectCoverageFrom: [
+    'src/**/*.{js,jsx,ts,tsx}',
+    '!src/**/*.d.ts',
+    '!src/**/__tests__/**',
+    '!src/**/*.test.{js,jsx,ts,tsx}',
+    '!src/**/*.spec.{js,jsx,ts,tsx}',
+  ],
+  coverageDirectory: 'coverage',
+  coverageReporters: ['html', 'text', 'lcov', 'cobertura'],
+  coverageThreshold: {
+    global: {
+      branches: 50,
+      functions: 50,
+      lines: 50,
+      statements: 50
+    }
+  },
 };

@@ -45,5 +45,8 @@
   "jest-junit": {
     "outputDirectory": "test-results",
     "outputName": "junit.xml"
+  },
+  "prisma": {
+    "seed": "node prisma/seed.js"
   }
 }

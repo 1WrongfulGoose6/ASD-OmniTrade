@@ -1,4 +1,4 @@
-// src/app/deposit/page.js
+// src/app/withdraw/page.js
 "use client";
 import React, { useState } from "react";
 import { useRouter } from "next/navigation";
@@ -6,7 +6,7 @@ import NavBar from "@/components/NavBar";
 import WaveBackground from "@/components/WaveBackground";
 import Image from "next/image";
 
-export default function DepositPage() {
+export default function WithdrawPage() {
   const [amount, setAmount] = useState("");
   const [cardNumber, setCardNumber] = useState("");
   const [expiry, setExpiry] = useState("");
@@ -16,7 +16,6 @@ export default function DepositPage() {
   const [showPopup, setShowPopup] = useState(false);
   const router = useRouter();
 
-  // Card type detection
   const detectCardType = (num) => {
     if (num.startsWith("4")) return "visa";
     if (/^5[1-5]/.test(num)) return "mastercard";
@@ -28,19 +27,16 @@ export default function DepositPage() {
   const validateForm = () => {
     let newErrors = {};
 
-    // Amount
     const amt = Number(amount);
     if (!Number.isFinite(amt) || amt <= 0) {
       newErrors.amount = "Enter a valid amount greater than 0";
     }
 
-    // Card number
     const cleanCard = cardNumber.replace(/\s+/g, "");
     if (!/^\d{15,16}$/.test(cleanCard)) {
       newErrors.cardNumber = "Card number must be 15 or 16 digits.";
     }
 
-    // Expiry
     if (!/^\d{2}\/\d{2}$/.test(expiry)) {
       newErrors.expiry = "Use MM/YY format.";
     } else {
@@ -56,7 +52,6 @@ export default function DepositPage() {
       }
     }
 
-    // CVV
     if (!/^\d{3,4}$/.test(cvv)) {
       newErrors.cvv = "CVV must be 3 or 4 digits.";
     }
@@ -71,7 +66,7 @@ export default function DepositPage() {
 
     setBusy(true);
     try {
-      const res = await fetch("/api/deposit", {
+      const res = await fetch("/api/withdraw", {
         method: "POST",
         headers: { "content-type": "application/json" },
         body: JSON.stringify({ amount: Number(amount) }),
@@ -84,10 +79,10 @@ export default function DepositPage() {
 
       if (!res.ok) {
         if (res.status === 401) {
-          alert("Please log in to deposit.");
+          alert("Please log in to withdraw.");
           return;
         }
-        throw new Error(payload?.error || `Deposit failed (${res.status})`);
+        throw new Error(payload?.error || `Withdrawal failed (${res.status})`);
       }
 
       setShowPopup(true);
@@ -110,10 +105,9 @@ export default function DepositPage() {
 
       <section className="relative z-10 mx-auto flex w-full max-w-6xl flex-1 items-center justify-center px-6 pb-16 pt-8">
         <div className="w-full max-w-md rounded-2xl border border-white/25 bg-white/90 p-8 text-gray-900 shadow-lg backdrop-blur">
-          <h1 className="mb-6 text-center text-2xl font-bold">Deposit Funds</h1>
+          <h1 className="mb-6 text-center text-2xl font-bold">Withdraw Funds</h1>
 
           <form onSubmit={handleSubmit} className="space-y-4">
-            {/* Card Number */}
             <div>
               <label className="block text-sm font-medium text-gray-700">Card Number</label>
               <div className="flex items-center gap-2">
@@ -126,20 +120,13 @@ export default function DepositPage() {
                   className="mt-1 flex-1 rounded-lg border border-gray-300 px-3 py-2 text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
                   required
                 />
-                {cardType === "visa" && (
-                  <Image src="/visa.png" alt="Visa" width={40} height={25} />
-                )}
-                {cardType === "mastercard" && (
-                  <Image src="/mastercard.png" alt="MasterCard" width={40} height={25} />
-                )}
-                {cardType === "amex" && (
-                  <Image src="/amex.png" alt="Amex" width={40} height={25} />
-                )}
+                {cardType === "visa" && <Image src="/visa.png" alt="Visa" width={40} height={25} />}
+                {cardType === "mastercard" && <Image src="/mastercard.png" alt="MasterCard" width={40} height={25} />}
+                {cardType === "amex" && <Image src="/amex.png" alt="Amex" width={40} height={25} />}
               </div>
               {errors.cardNumber && <p className="text-red-500 text-sm">{errors.cardNumber}</p>}
             </div>
 
-            {/* Expiry + CVV */}
             <div className="flex gap-4">
               <div className="flex-1">
                 <label className="block text-sm font-medium text-gray-700">Expiry</label>
@@ -167,7 +154,6 @@ export default function DepositPage() {
               </div>
             </div>
 
-            {/* Amount */}
             <div>
               <label className="block text-sm font-medium text-gray-700">Amount (AUD)</label>
               <input
@@ -188,7 +174,7 @@ export default function DepositPage() {
               disabled={busy}
               className="mt-4 w-full rounded-lg bg-blue-600 py-2 font-medium text-white transition hover:bg-blue-700 disabled:opacity-60"
             >
-              {busy ? "Processing…" : "Confirm Deposit"}
+              {busy ? "Processing…" : "Confirm Withdrawal"}
             </button>
           </form>
         </div>
@@ -197,7 +183,7 @@ export default function DepositPage() {
       {showPopup && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
           <div className="rounded-xl bg-white px-8 py-6 text-center shadow-lg">
-            <p className="text-lg font-semibold text-gray-900">Deposit recorded </p>
+            <p className="text-lg font-semibold text-gray-900">Withdrawal recorded</p>
           </div>
         </div>
       )}

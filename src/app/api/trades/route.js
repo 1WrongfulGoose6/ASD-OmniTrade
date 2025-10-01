@@ -33,19 +33,60 @@ export async function POST(request) {
   if (!userId) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
 
   const body = await request.json();
-  const { symbol, side, qty, price, status = "FILLED" } = body || {};
+  let { symbol, side, qty, price, status = "FILLED" } = body || {};
   if (!symbol || !side || !qty || !price) {
     return NextResponse.json({ error: "symbol, side, qty, price required" }, { status: 400 });
   }
 
-  // 1) Create the Trade
+  symbol = String(symbol).toUpperCase();
+  side = side === "SELL" ? "SELL" : "BUY";
+  qty = Number(qty);
+  price = Number(price);
+
+  if (qty <= 0 || price <= 0) {
+    return NextResponse.json({ error: "Quantity and price must be greater than 0" }, { status: 400 });
+  }
+
+  
+  if (side === "BUY") {
+    const cashAgg = await prisma.deposit.aggregate({
+      _sum: { amount: true },
+      where: { userId },
+    });
+    const availableCash = Number(cashAgg._sum.amount || 0);
+    const totalCost = qty * price;
+
+    if (totalCost > availableCash) {
+      return NextResponse.json(
+        { error: `Insufficient funds. Available cash: ${availableCash.toFixed(2)} AUD` },
+        { status: 400 }
+      );
+    }
+  }
+
+
+  if (side === "SELL") {
+    const trades = await prisma.trade.findMany({ where: { userId, symbol } });
+    let ownedShares = 0;
+    for (const t of trades) {
+      ownedShares += t.side === "BUY" ? t.qty : -t.qty;
+    }
+    if (qty > ownedShares) {
+      return NextResponse.json(
+        { error: `Not enough shares to sell. Owned: ${ownedShares}` },
+        { status: 400 }
+      );
+    }
+  }
+
+
   const trade = await prisma.trade.create({
     data: {
       userId: Number(userId),
-      symbol: String(symbol).toUpperCase(),
-      side: side === "SELL" ? "SELL" : "BUY",
-      qty: Number(qty),
-      price: Number(price),
+      symbol,
+      side,
+      qty,
+      price,
       status,
     },
   });
@@ -68,3 +109,4 @@ export async function POST(request) {
 
   return NextResponse.json({ ok: true, trade }, { status: 200 });
 }
+

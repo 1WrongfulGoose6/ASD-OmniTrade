@@ -8,10 +8,11 @@ export const dynamic = "force-dynamic";
 
 export async function GET() {
   const userId = await getUserIdFromCookies();
+  console.log("Resolved userId:", userId);
   if (!userId) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
 
   try {
-    // 1) holdings from trades (your existing logic)… keep as you have
+    // 1) holdings from trades
     const trades = await prisma.trade.findMany({
       where: { userId },
       orderBy: { createdAt: "asc" },
@@ -39,7 +40,7 @@ export async function GET() {
 
     const positions = [...map.values()].filter(p => p.shares > 0);
     const rows = positions.map((p) => {
-      const price = p.costBasis; // if you don’t fetch live quotes here
+      const price = p.costBasis; 
       const value = price * p.shares;
       const profitLoss = (price - p.costBasis) * p.shares;
       return {
@@ -64,24 +65,31 @@ export async function GET() {
     );
 
     // 2) cash from deposits
+    const deposits = await prisma.deposit.findMany({ where: { userId } });
+    // console.log("Deposits for user:", deposits);
     const agg = await prisma.deposit.aggregate({
       _sum: { amount: true },
       where: { userId },
     });
     const cash = Number(agg._sum.amount || 0);
+    // console.log("cash for user:", cash);
 
     return NextResponse.json(
-      {
-        holdings: rows,
-        totals,
-        cash,                         // AUD cash from deposits
-        totalsWithCash: {
-          totalValue: totals.totalValue + cash,
-          totalProfitLoss: totals.totalProfitLoss, // cash has no P/L
-        },
-      },
-      { status: 200 }
-    );
+  {
+    holdings: rows,
+    totals: {
+      totalValue: totals.totalValue,
+      totalProfitLoss: totals.totalProfitLoss,
+      cashAud: cash, 
+    },
+    totalsWithCash: {
+      totalValue: totals.totalValue + cash,
+      totalProfitLoss: totals.totalProfitLoss,
+    },
+  },
+  { status: 200 }
+);
+
   } catch (e) {
     console.error("[portfolio] error", e);
     return NextResponse.json({ error: "internal_error" }, { status: 500 });

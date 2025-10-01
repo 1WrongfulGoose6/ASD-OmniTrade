@@ -8,8 +8,8 @@ import Link from "next/link";
 import { format } from "date-fns";
 import { DayPicker } from "react-day-picker";
 import 'react-day-picker/dist/style.css';
-import {supabase} from "@/utils/DBClient";
 import WaveBackground from "@/components/WaveBackground";
+import fetchTradeBacklog from "@/app/trade-backlog/lib/fetchTradeBacklog";
 
 // Custom hook to detect clicks outside of a component
 const useOutsideClick = (ref, callback) => {
@@ -114,16 +114,12 @@ export default function TradeBacklog() {
   // 1. DATA FETCHING EFFECT (Runs only on mount)
   // -----------------------------------------------------------
   useEffect(() => {
-    const fetchTradeBacklog = async () => {
+    const fetchTradeBacklogClient = async () => {
       setIsLoading(true);
       setError(null);
 
       try {
-        // Query Supabase directly
-        const { data, error } = await supabase
-            .from("Trade Backlog")
-            .select("*")
-            .order("date", { ascending: false });
+        const { data, error } = await fetchTradeBacklog();
 
         if (error) throw error;
 
@@ -139,7 +135,7 @@ export default function TradeBacklog() {
       }
     };
 
-    fetchTradeBacklog();
+    fetchTradeBacklogClient();
   }, []);
 
 
@@ -235,7 +231,7 @@ export default function TradeBacklog() {
         <NavBar />
         <div className={'flex items-center flex-col px-32 gap-3'}>
           <div className="w-full flex items-center justify-between p-4 px-8 border-b bg-gray-50 rounded-2xl">
-            <Link className="flex items-center gap-2 text-blue-600 hover:text-blue-800" href={"/"}>
+            <Link className="flex items-center gap-2 text-blue-600 hover:text-blue-800" href={"/public"}>
               <ArrowLeft className="w-5 h-5" />
               <span className="font-medium">Home</span>
             </Link>

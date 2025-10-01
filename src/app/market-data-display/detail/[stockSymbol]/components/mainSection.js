@@ -5,6 +5,7 @@ import { ArrowLeft } from "lucide-react";
 import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import GraphSection from "./graphSection";
+import AlertsPanel from "@/components/AlertsPanel";
 import PropTypes from "prop-types";
 import WatchStar from "@/components/WatchStar";
 
@@ -110,6 +111,9 @@ export default function MainSection({ stockSymbol }) {
             <p className="text-gray-700">{stockData.description}</p>
           </div>
         ) : null}
+
+        {/* Alerts */}
++       <AlertsPanel symbol={stockData.symbol} />
       </div>
     </div>
   );

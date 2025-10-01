@@ -5,8 +5,30 @@ import NavBar from '@/components/NavBar';
 import Link from 'next/link';
 
 export default function ProfilePage() {
-    // Dummy user (replace with DB later)
-  const user = { name: "John Smith", email: "jsmith@gmail.com", role: "Trader" };
+    // user info state
+  const [user, setUser] = React.useState(null);
+  const [loading, setLoading] = React.useState(true);
+  const [error, setError] = React.useState(null);
+
+  // fetch logged in user
+  React.useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      setLoading(true);
+      setError(null);
+      try {
+        const res = await fetch('/api/auth/me', { cache: 'no-store' });
+        if (!res.ok) throw new Error(`me ${res.status}`);
+        const json = await res.json();
+        if (!cancelled) setUser(json.user ?? null);
+      } catch (e) {
+        if (!cancelled) setError(e.message || 'Failed to load user');
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    })();
+    return () => { cancelled = true; };
+  }, []);
 
   return (
     <main className="relative min-h-screen overflow-hidden bg-gradient-to-br from-blue-600 to-blue-400 text-white">
@@ -22,30 +44,46 @@ export default function ProfilePage() {
       <NavBar />
 
       <section className="relative z-10 mx-auto max-w-6xl px-8 pt-12">
-        <h1 className="text-4xl font-bold drop-shadow">User Profile</h1>
+        <h1 className="text-4xl font-bold drop-shadow">My Profile</h1>
         <p className="mt-2 text-blue-100/90">Manage your account details and settings.</p>
       </section>
 
-      {/* Profile Card */}
       <section className="relative z-10 mx-auto max-w-6xl px-8 pt-6 pb-12">
         <div className="rounded-2xl border border-white/25 bg-white/85 p-6 text-gray-900 backdrop-blur">
-          <div className="flex items-center gap-6">
-            <div className="flex h-20 w-20 items-center justify-center rounded-full bg-blue-600 text-white text-2xl font-bold">
-              {user.name[0]}
-            </div>
-            <div>
-              <h2 className="text-2xl font-semibold">{user.name}</h2>
-              <p className="text-gray-600">{user.email}</p>
-              <p className="text-gray-500 text-sm">{user.role}</p>
-            </div>
-          </div>
+          {loading && <div className="text-gray-700">Loading…</div>}
+          {error && <div className="text-red-700">Error: {error}</div>}
 
-          <div className="mt-6">
-            <Link href="/profile/edit"
-                  className="rounded-full bg-blue-600 px-6 py-2 text-sm font-medium text-white shadow hover:bg-blue-700">
-              Edit Profile
-            </Link>
-          </div>
+          {!loading && !error && !user && (
+            <div className="text-gray-700">
+              Not signed in. <Link href="/login" className="text-blue-700 underline">Log in</Link> or <Link href="/register" className="text-blue-700 underline">Register</Link>.
+            </div>
+          )}
+
+          {/* profile info */}
+          {!loading && !error && user && (
+            <>
+              <div className="flex items-center gap-6">
+                <div className="flex h-20 w-20 items-center justify-center rounded-full bg-blue-600 text-white text-2xl font-bold">
+                  {(user.name || user.email || 'U')[0]}
+                </div>
+                
+                <div>
+                  <h2 className="text-2xl font-semibold">{user.name ?? 'No name'}</h2>
+                  <p className="text-gray-600">{user.email}</p>
+                  {/*<p className="text-gray-500 text-sm">{'Trader'}</p>*/}
+                </div>
+              </div>
+
+              <div className="mt-6">
+                <Link
+                  href="/profile/edit"
+                  className="rounded-full bg-blue-600 px-6 py-2 text-sm font-medium text-white shadow hover:bg-blue-700 transition"
+                >
+                  Edit Profile
+                </Link>
+              </div>
+            </>
+          )}
         </div>
       </section>
     </main>

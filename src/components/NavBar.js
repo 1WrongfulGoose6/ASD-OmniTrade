@@ -10,10 +10,13 @@ export default function NavBar() {
   const [loggedIn, setLoggedIn] = React.useState(false);
   const [loading, setLoading] = React.useState(true);
 
+  const [user, setUser] = React.useState(null);
+
   async function loadMe() {
     try {
       const res = await fetch("/api/auth/me", { cache: "no-store" });
       const data = await res.json();
+      setUser(data?.user || null);
       setLoggedIn(Boolean(data?.user));
     } catch {
       setLoggedIn(false);
@@ -59,6 +62,11 @@ export default function NavBar() {
           <Link href="/profile" className="hover:opacity-90">Profile</Link>
           <Link href="/trade-backlog" className="hover:opacity-90">History</Link>
           <Link href="/settings" className="hover:opacity-90">Settings</Link>
+
+          {/* Show Admin Dashboard only if logged in as admin */}
+          {user?.email === "admin@example.com" && (
+            <Link href="/admin" className="hover:opacity-90">Admin Dashboard</Link>
+          )}
         </div>
 
         <div className="flex items-center gap-3">

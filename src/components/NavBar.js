@@ -39,7 +39,7 @@ export default function NavBar() {
   }, []);
 
   const logout = async () => {
-    try { await fetch("/api/auth/logout", { method: "POST" }); } catch {}
+    try { await fetch("/api/auth/logout", { method: "POST" }); } catch {console.log("Error")}
     // tell everyone auth changed, then refresh any server bits
     window.dispatchEvent(new Event("auth:changed"));
     router.refresh();

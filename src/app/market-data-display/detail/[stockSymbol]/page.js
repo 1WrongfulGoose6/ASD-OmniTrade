@@ -2,6 +2,8 @@
 import NavBar from "@/components/NavBar";
 import WaveBackground from "@/components/WaveBackground";
 import DetailClient from "./DetailClient";
+import React from "react";
+import PropTypes from "prop-types";
 
 export default async function MarketDetail({ params }) {
   // In Next 15, params is a Promise in server components
@@ -19,3 +21,7 @@ export default async function MarketDetail({ params }) {
     </main>
   );
 }
+
+MarketDetail.propTypes = {
+    params: PropTypes.shape({ stockSymbol: PropTypes.string.isRequired }).isRequired,
+};

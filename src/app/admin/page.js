@@ -6,10 +6,9 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 
 export default function AdminDashboard() {
-  // user stats/numbers
   const [stats, setStats] = React.useState({ totalUsers: 0, blacklisted: 0 });
-  const [loading, setLoading] = React.useState(true);
-  const [error, setError] = React.useState(null);
+  const [, setLoading] = React.useState(true);
+  const [, setError] = React.useState(null);
 
   const router = useRouter();
   

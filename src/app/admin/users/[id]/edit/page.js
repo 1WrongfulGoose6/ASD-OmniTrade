@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useEffect, useState } from 'react';
+import PropTypes from 'prop-types';
 import NavBar from '@/components/NavBar';
 import { useRouter } from 'next/navigation';
 
@@ -167,3 +168,9 @@ export default function AdminEditUserPage({ params }) {
     </main>
   );
 }
+
+AdminEditUserPage.propTypes = {
+  params: PropTypes.shape({
+    id: PropTypes.string.isRequired
+  }).isRequired
+};

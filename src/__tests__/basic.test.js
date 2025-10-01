@@ -1,5 +1,3 @@
-/* global jest */
-// src/__tests__/basic.test.js
 import React from 'react';
 import { render, screen } from '@testing-library/react';
 import HomeView from '../components/HomeView';

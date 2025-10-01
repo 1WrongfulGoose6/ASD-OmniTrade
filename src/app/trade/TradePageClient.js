@@ -78,7 +78,6 @@ export default function TradePageClient() {
     return () => {
       off = true;
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [symbol]);
 
   if (!symbol) return null;

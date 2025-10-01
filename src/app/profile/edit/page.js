@@ -5,9 +5,8 @@ import NavBar from '@/components/NavBar';
 import { useRouter } from 'next/navigation';
 
 export default function EditProfilePage() {
-  // states for profile + password form
   const [loading, setLoading] = useState(true);
-  const [user, setUser] = useState(null);
+  const [, setUser] = useState(null);
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [showPasswordFields, setShowPasswordFields] = useState(false);

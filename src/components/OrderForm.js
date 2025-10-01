@@ -2,6 +2,7 @@
 "use client";
 
 import React, { useState } from "react";
+import PropTypes from "prop-types";
 
 function toNum(v) {
   if (typeof v === "number") return Number.isFinite(v) ? v : null;
@@ -199,3 +200,8 @@ export default function OrderForm({ symbol, price }) {
     </section>
   );
 }
+
+OrderForm.propTypes = {
+  symbol: PropTypes.string.isRequired,
+  price: PropTypes.number.isRequired
+};

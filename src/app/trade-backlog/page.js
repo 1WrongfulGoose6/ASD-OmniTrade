@@ -1,404 +1,354 @@
 // src/app/trade-backlog/page.js
-'use client'
+'use client';
 
 import React, { useState, useEffect, useRef } from 'react';
-import NavBar from "@/components/NavBar";
-import { ArrowLeft, Calendar } from "lucide-react";
-import Link from "next/link";
-import { format } from "date-fns";
-import { DayPicker } from "react-day-picker";
+import NavBar from '@/components/NavBar';
+import { ArrowLeft, Calendar } from 'lucide-react';
+import Link from 'next/link';
+import { format } from 'date-fns';
+import { DayPicker } from 'react-day-picker';
 import 'react-day-picker/dist/style.css';
-import WaveBackground from "@/components/WaveBackground";
-import fetchTradeBacklog from "@/app/trade-backlog/lib/fetchTradeBacklog";
+import WaveBackground from '@/components/WaveBackground';
+import fetchTradeBacklog from '@/app/trade-backlog/lib/fetchTradeBacklog';
 
-// Custom hook to detect clicks outside of a component
+// ---- helpers ----
+function fmtDateSafe(value) {
+  try {
+    const d = new Date(value);
+    if (Number.isNaN(d.getTime())) return String(value ?? '');
+    return format(d, 'PP p'); // e.g. "Oct 1, 2025 3:42 PM"
+  } catch {
+    return String(value ?? '');
+  }
+}
+
+// click-outside helper
 const useOutsideClick = (ref, callback) => {
   useEffect(() => {
     const handleClickOutside = (event) => {
-      if (ref.current && !ref.current.contains(event.target)) {
-        callback();
-      }
+      if (ref.current && !ref.current.contains(event.target)) callback();
     };
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => {
-      document.removeEventListener("mousedown", handleClickOutside);
-    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
   }, [ref, callback]);
 };
 
-// Function to convert JSON array to a CSV string
+// CSV helpers
 const convertToCSV = (data) => {
-  if (data.length === 0) return '';
-
-  // 1. Get the headers (keys from the first object)
+  if (!Array.isArray(data) || data.length === 0) return '';
   const headers = Object.keys(data[0]);
-
-  // 2. Format the headers row
   const headerRow = headers.join(',');
-
-  // 3. Format the data rows
-  const dataRows = data.map(row => {
-    return headers.map(fieldName => {
-      // Ensure fields containing commas or new lines are quoted
-      let field = row[fieldName];
-      if (typeof field === 'string' && (field.includes(',') || field.includes('\n'))) {
-        // Double-up internal quotes and wrap the whole field in quotes
-        field = `"${field.replace(/"/g, '""')}"`;
-      }
-      return field;
-    }).join(',');
-  });
-
-  // 4. Combine headers and rows
+  const dataRows = data.map((row) =>
+    headers
+      .map((field) => {
+        let v = row[field];
+        if (typeof v === 'string' && (v.includes(',') || v.includes('\n') || v.includes('"'))) {
+          v = `"${v.replace(/"/g, '""')}"`;
+        }
+        return v;
+      })
+      .join(',')
+  );
   return [headerRow, ...dataRows].join('\n');
 };
 
-// Function to trigger the download in the browser
 const downloadCSV = (csvString, fileName) => {
   const blob = new Blob([csvString], { type: 'text/csv;charset=utf-8;' });
   const url = URL.createObjectURL(blob);
-
-  const link = document.createElement('a');
-  link.href = url;
-  link.setAttribute('download', `${fileName}.csv`);
-  document.body.appendChild(link);
-  link.click();
-  document.body.removeChild(link);
-  URL.revokeObjectURL(url); // Clean up the URL object
+  const a = document.createElement('a');
+  a.href = url;
+  a.setAttribute('download', `${fileName}.csv`);
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
 };
 
+// ---- page ----
 export default function TradeBacklog() {
-  const [allTradesData, setAllTradesData] = useState([]); // Stores the original fetched data
-  const [trades, setTrades] = useState([]); // Stores the filtered data displayed in the table
-  const [isLoading, setIsLoading] = useState(true); // Added loading state
-  const [error, setError] = useState(null); // Added error state
+  const [allTradesData, setAllTradesData] = useState([]);
+  const [trades, setTrades] = useState([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState(null);
   const [showDatePicker, setShowDatePicker] = useState(false);
   const [validationWarning, setValidationWarning] = useState(null);
-  const datePickerRef = useRef(null);
-
-  // The mock data array is removed, as it's now fetched.
 
   const [filters, setFilters] = useState({
     searchQuery: '',
     tradeType: 'All',
-    dateRange: {
-      from: undefined,
-      to: undefined,
-    },
+    dateRange: { from: null, to: null }, // safe shape
   });
 
-  // Use the custom hook to close the date picker when clicking outside
+  const datePickerRef = useRef(null);
   useOutsideClick(datePickerRef, () => {
-    if (showDatePicker) {
-      setShowDatePicker(false);
-    }
+    if (showDatePicker) setShowDatePicker(false);
   });
 
-  function handleExportCSV(){
-    if (trades.length === 0) {
-      setValidationWarning("Cannot export: No trades found matching the current filters.");
-      return;
-    }
-    // Clear any previous warning on successful operation
-    setValidationWarning(null);
+  // derive once for rendering
+  const range = filters?.dateRange ?? { from: null, to: null };
 
-    // 1. Convert the filtered JSON data to a CSV string
-    const csvData = convertToCSV(trades);
-
-    // 2. Define the file name
-    const timestamp = format(new Date(), 'yyyyMMdd_HHmmss');
-    const fileName = `Trade_Backlog_${timestamp}`;
-
-    // 3. Trigger the download
-    downloadCSV(csvData, fileName);
-  }
-
-  // -----------------------------------------------------------
-  // 1. DATA FETCHING EFFECT (Runs only on mount)
-  // -----------------------------------------------------------
+  // 1) fetch data once
   useEffect(() => {
     const fetchTradeBacklogClient = async () => {
       setIsLoading(true);
       setError(null);
-
       try {
         const { data, error } = await fetchTradeBacklog();
-
         if (error) throw error;
-
         setAllTradesData(data || []);
         setTrades(data || []);
       } catch (err) {
-        console.error("Supabase fetch error:", err);
-        setError(err.message || "Could not load trade history.");
+        console.error('trade-backlog fetch error:', err);
+        setError(err.message || 'Could not load trade history.');
         setAllTradesData([]);
         setTrades([]);
       } finally {
         setIsLoading(false);
       }
     };
-
     fetchTradeBacklogClient();
   }, []);
 
-
-  // -----------------------------------------------------------
-  // 2. FILTERING EFFECT (Runs on filter change)
-  // -----------------------------------------------------------
+  // 2) apply filters
   useEffect(() => {
-    // Start with the full, fetched dataset
-    let filteredTrades = allTradesData;
-    let newWarning = validationWarning; // Preserve existing warning unless overwritten
+    let filtered = Array.isArray(allTradesData) ? [...allTradesData] : [];
+    let warn = validationWarning;
 
-    // Clear warning if it was a date range issue and filters have been fixed
-    if (newWarning && newWarning.includes("date range") && filters.dateRange.from && filters.dateRange.to && (new Date(filters.dateRange.from) <= new Date(filters.dateRange.to))) {
-      newWarning = null;
-    }
-    // Clear warning if it was a search query issue and the query is now valid
-    // NOTE: The search validation logic is now primarily in handleSearchChange,
-    // but we ensure the filtering is based on the current valid state.
-
-    // Apply Search Filter
+    // Search
     if (filters.searchQuery) {
-      // If the query is invalid, filtering should either stop or filter nothing.
-      // We rely on handleSearchChange to prevent the state from holding an invalid query
-      // that matches the validation pattern.
-
-      // This regex allows letters, numbers, spaces, and hyphens/dashes.
-      const validSearchPattern = /^[a-z\s-]+$/i;
-
-      if (validSearchPattern.test(filters.searchQuery)) {
-        filteredTrades = filteredTrades.filter(trade =>
-            trade.asset.toLowerCase().includes(filters.searchQuery.toLowerCase()) ||
-            trade.id.toLowerCase().includes(filters.searchQuery.toLowerCase())
+      const valid = /^[a-z0-9\s-]*$/i.test(filters.searchQuery);
+      if (valid) {
+        const q = filters.searchQuery.toLowerCase();
+        filtered = filtered.filter(
+          (t) =>
+            String(t.asset || '').toLowerCase().includes(q) ||
+            String(t.id || '').toLowerCase().includes(q)
         );
-        // Clear any previous search-related warning if the filter is now valid and applied
-        if (newWarning && newWarning.includes("search query")) {
-          newWarning = null;
-        }
+        if (warn?.includes('search query')) warn = null;
       } else {
-        // If the query is invalid according to this effect's check (which should rarely happen
-        // if handleSearchChange is working), set the warning and filter to empty.
-        if (!newWarning || !newWarning.includes("search query")) {
-          newWarning = "Invalid search query: Please use only letters, spaces, and hyphens.";
+        if (!warn || !warn.includes('search query')) {
+          warn = 'Invalid search query: Please use only letters, numbers, spaces, and hyphens.';
         }
-        filteredTrades = [];
+        filtered = [];
       }
-    } else {
-      // Clear search-related warning if search query is empty
-      if (newWarning && newWarning.includes("search query")) {
-        newWarning = null;
-      }
+    } else if (warn?.includes('search query')) {
+      warn = null;
     }
 
-    // Apply Trade Type Filter
+    // Trade type
     if (filters.tradeType !== 'All') {
-      filteredTrades = filteredTrades.filter(trade => trade.type === filters.tradeType);
+      filtered = filtered.filter((t) => t.type === filters.tradeType);
     }
 
-    // Apply Date Filter
-    if (filters.dateRange.from) {
-      const fromDate = new Date(filters.dateRange.from);
-
-      if (filters.dateRange.to && fromDate > new Date(filters.dateRange.to)) {
-        newWarning = "Invalid date range: 'From' date cannot be after 'To' date.";
-        filteredTrades = [];
+    // Date range
+    const { from, to } = filters?.dateRange ?? { from: null, to: null };
+    if (from) {
+      const fromDate = new Date(from);
+      if (to && fromDate > new Date(to)) {
+        warn = "Invalid date range: 'From' date cannot be after 'To' date.";
+        filtered = [];
       } else {
-        // Date formatting logic remains the same
-        const toDate = filters.dateRange.to ? new Date(filters.dateRange.to) : fromDate;
-        if (filters.dateRange.to) {
+        const toDate = to ? new Date(to) : new Date(fromDate);
+        if (to) {
           toDate.setHours(23, 59, 59, 999);
         } else {
           fromDate.setHours(0, 0, 0, 0);
           toDate.setHours(23, 59, 59, 999);
         }
-
-        filteredTrades = filteredTrades.filter(trade => {
-          const tradeDate = new Date(trade.date);
-          return tradeDate >= fromDate && tradeDate <= toDate;
+        filtered = filtered.filter((t) => {
+          const td = new Date(t.date);
+          return td >= fromDate && td <= toDate;
         });
+        if (warn?.includes('date range')) warn = null;
       }
-    } else {
-      // Clear date range warning if filters are cleared
-      if (newWarning && newWarning.includes("date range")) {
-        newWarning = null;
-      }
+    } else if (warn?.includes('date range')) {
+      warn = null;
     }
 
-    // Update the state for the table
-    setTrades(filteredTrades);
-    setValidationWarning(newWarning); // Update the warning state
+    setTrades(filtered);
+    setValidationWarning(warn);
+  }, [filters, allTradesData]);
 
-  }, [filters, allTradesData]); // Reruns when filters change or when new data is fetched (allTradesData changes)
-
-  // -----------------------------------------------------------
-  // MODIFIED HANDLER: Added Search Input Validation
-  // -----------------------------------------------------------
-  const handleSearchChange = (event) => {
-    const value = event.target.value;
-    // Regex for allowing letters (a-z), numbers (0-9), spaces (\s), and hyphens (-)
-    // This covers typical asset symbols and ID formats.
-    const searchValidationRegex = /^[a-z0-9\s-]*$/i;
-
-    if (searchValidationRegex.test(value)) {
-      // Input is valid
-      setFilters(prev => ({ ...prev, searchQuery: value }));
-      setValidationWarning(null); // Clear any existing warning
-    } else {
-      // Input contains invalid characters
-      setFilters(prev => ({ ...prev, searchQuery: value })); // Still update the input value so user sees what they typed
-      setValidationWarning("Invalid search query: Please use only letters, numbers, spaces, and hyphens.");
-      // Note: The filtering effect will use the new state and handle the invalid query.
-    }
+  // handlers
+  const handleSearchChange = (e) => {
+    const value = e.target.value;
+    const ok = /^[a-z0-9\s-]*$/i.test(value);
+    setFilters((prev) => ({ ...prev, searchQuery: value }));
+    if (ok) setValidationWarning(null);
+    else
+      setValidationWarning(
+        'Invalid search query: Please use only letters, numbers, spaces, and hyphens.'
+      );
   };
 
-  const handleTradeTypeChange = (event) => {
-    setFilters(prev => ({ ...prev, tradeType: event.target.value }));
-    // Clear only search/date warnings, not export warning if present
-    if (validationWarning && (validationWarning.includes("search query") || validationWarning.includes("date range"))) {
+  const handleTradeTypeChange = (e) => {
+    setFilters((prev) => ({ ...prev, tradeType: e.target.value }));
+    if (validationWarning && (validationWarning.includes('search query') || validationWarning.includes('date range'))) {
       setValidationWarning(null);
     }
   };
 
-  const handleDateChange = (range) => {
-    setFilters(prev => ({ ...prev, dateRange: range }));
-    // Clear all warnings related to search or date range
-    if (validationWarning && (validationWarning.includes("search query") || validationWarning.includes("date range"))) {
-      setValidationWarning(null);
-    }
+  const handleDateChange = (r) => {
+    setFilters((prev) => ({
+      ...prev,
+      dateRange: {
+        from: r?.from ?? null,
+        to: r?.to ?? null,
+      },
+    }));
   };
 
-  // -----------------------------------------------------------
-  // 3. RENDER LOGIC (No changes needed here as the warning section is already in place)
-  // -----------------------------------------------------------
+  const handleExportCSV = () => {
+    if (!trades.length) {
+      setValidationWarning('Cannot export: No trades found matching the current filters.');
+      return;
+    }
+    setValidationWarning(null);
+    const csv = convertToCSV(trades);
+    const ts = format(new Date(), 'yyyyMMdd_HHmmss');
+    downloadCSV(csv, `Trade_Backlog_${ts}`);
+  };
 
+  // render states
   if (isLoading) {
     return (
-        <main className="flex-col min-h-screen bg-gradient-to-br from-blue-600 to-blue-400 flex gap-4 items-center justify-center px-32">
-          <NavBar />
-          <div className="bg-white/90 backdrop-blur-md rounded-2xl shadow-xl w-full p-8 text-center text-blue-600 font-semibold">
-            Loading trade history...
-          </div>
-        </main>
+      <main className="flex-col min-h-screen bg-gradient-to-br from-blue-600 to-blue-400 flex gap-4 items-center justify-center px-32">
+        <NavBar />
+        <div className="bg-white/90 backdrop-blur-md rounded-2xl shadow-xl w-full p-8 text-center text-blue-600 font-semibold">
+          Loading trade history...
+        </div>
+      </main>
     );
   }
 
   if (error) {
     return (
-        <main className="flex-col min-h-screen bg-gradient-to-br from-blue-600 to-blue-400 flex gap-4 items-center justify-center px-32">
-          <NavBar />
-          <div className="bg-white/90 backdrop-blur-md rounded-2xl shadow-xl w-full p-8 text-center text-red-600 font-semibold">
-            Error: {error}
-          </div>
-        </main>
+      <main className="flex-col min-h-screen bg-gradient-to-br from-blue-600 to-blue-400 flex gap-4 items-center justify-center px-32">
+        <NavBar />
+        <div className="bg-white/90 backdrop-blur-md rounded-2xl shadow-xl w-full p-8 text-center text-red-600 font-semibold">
+          Error: {error}
+        </div>
+      </main>
     );
   }
 
   return (
-      <main
-          className="relative min-h-screen overflow-hidden bg-gradient-to-br from-blue-600 to-blue-400 text-white"
-      >
-        <WaveBackground />
-        <NavBar />
-        <div className={'flex items-center flex-col px-32 gap-3'}>
-          <div className="w-full flex items-center justify-between p-4 px-8 border-b bg-gray-50 rounded-2xl">
-            <Link className="flex items-center gap-2 text-blue-600 hover:text-blue-800" href={"/public"}>
-              <ArrowLeft className="w-5 h-5" />
-              <span className="font-medium">Home</span>
-            </Link>
-            <h1 className="text-2xl font-semibold text-gray-700 text-center">
-              Trade Backlog
-            </h1>
-          </div>
+    <main className="relative min-h-screen overflow-hidden bg-gradient-to-br from-blue-600 to-blue-400 text-white">
+      <WaveBackground />
+      <NavBar />
 
-          <div className="bg-white/90 backdrop-blur-md rounded-2xl shadow-xl w-full p-8">
-            {/* Filters Section (Modified to include Export button) */}
-            <div className="flex flex-col md:flex-row justify-between items-center gap-4 mb-6">
+      <div className="flex items-center flex-col px-6 md:px-12 lg:px-32 gap-3">
+        <div className="w-full flex items-center justify-between p-4 px-8 border-b bg-gray-50 rounded-2xl">
+          <Link className="flex items-center gap-2 text-blue-600 hover:text-blue-800" href={'/public'}>
+            <ArrowLeft className="w-5 h-5" />
+            <span className="font-medium">Home</span>
+          </Link>
+          <h1 className="text-2xl font-semibold text-gray-700 text-center">Trade Backlog</h1>
+          <div className="w-5" />
+        </div>
 
-              {/* Left Side: Search Bar and Trade Type Filter */}
-              <div className="flex flex-col md:flex-row gap-4 w-full md:w-3/5">
-                {/* Search Bar */}
-                <input
-                    type="text"
-                    placeholder="Search by Asset or ID..."
-                    className="w-full px-4 py-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-blue-400 text-gray-700 shadow-sm"
-                    value={filters.searchQuery}
-                    onChange={handleSearchChange}
-                />
-                {/* Trade Type Filter */}
-                <div className="flex items-center gap-2 w-full md:w-auto">
-                  <label htmlFor="tradeType" className="font-medium text-gray-700 hidden md:block">Type:</label>
-                  <select
-                      id="tradeType"
-                      className="px-4 py-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-blue-400 text-gray-700 shadow-sm"
-                      value={filters.tradeType}
-                      onChange={handleTradeTypeChange}
-                  >
-                    <option value="All">All</option>
-                    <option value="Buy">Buy</option>
-                    <option value="Sell">Sell</option>
-                  </select>
-                </div>
-              </div>
-
-              {/* Right Side: Date Filter and Export Button */}
-              <div className="flex flex-col md:flex-row gap-4 w-full md:w-2/5 justify-end">
-                {/* Date Filter */}
-                <div className="flex items-center gap-2 w-full md:w-auto relative" ref={datePickerRef}>
-                  <label htmlFor="dateRange" className="font-medium text-gray-700 hidden md:block">Date:</label>
-                  <div
-                      className="relative w-full cursor-pointer flex items-center px-4 py-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-blue-400 text-gray-700 shadow-sm"
-                      onClick={() => setShowDatePicker(!showDatePicker)}
-                  >
-                    <input
-                        id="dateRange"
-                        type="text"
-                        className="w-full bg-transparent outline-none cursor-pointer"
-                        placeholder="Select date range"
-                        value={
-                          filters.dateRange.from
-                              ? `${format(filters.dateRange.from, 'PP')} - ${filters.dateRange.to ? format(filters.dateRange.to, 'PP') : ''}`
-                              : ''
-                        }
-                        readOnly
-                    />
-                    <Calendar className="w-5 h-5 text-gray-400 absolute right-3" />
-                  </div>
-                  {/* Conditional Rendering for DayPicker */}
-                  {showDatePicker && (
-                      <div className="absolute top-full right-0 z-10 mt-2 bg-white rounded-lg shadow-lg">
-                        <DayPicker
-                            mode="range"
-                            selected={filters.dateRange}
-                            onSelect={handleDateChange}
-                            showOutsideDays
-                            min={1}
-                        />
-                      </div>
-                  )}
-                </div>
-
-                <button
-                    onClick={handleExportCSV} // You must define this handler
-                    className="w-full md:w-auto px-4 py-2 bg-blue-600 text-white font-semibold rounded-lg shadow-md hover:bg-blue-800 transition duration-150 focus:outline-none focus:ring-2 focus:ring-green-400"
+        <div className="bg-white/90 backdrop-blur-md rounded-2xl shadow-xl w-full p-8 text-gray-900">
+          {/* Filters */}
+          <div className="flex flex-col md:flex-row justify-between items-center gap-4 mb-6">
+            {/* Left: search + type */}
+            <div className="flex flex-col md:flex-row gap-4 w-full md:w-3/5">
+              <input
+                type="text"
+                placeholder="Search by Asset or ID..."
+                className="w-full px-4 py-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-blue-400 text-gray-700 shadow-sm"
+                value={filters.searchQuery}
+                onChange={handleSearchChange}
+              />
+              <div className="flex items-center gap-2 w-full md:w-auto">
+                <label htmlFor="tradeType" className="font-medium text-gray-700 hidden md:block">
+                  Type:
+                </label>
+                <select
+                  id="tradeType"
+                  className="px-4 py-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-blue-400 text-gray-700 shadow-sm"
+                  value={filters.tradeType}
+                  onChange={handleTradeTypeChange}
                 >
-                  Export CSV
-                </button>
+                  <option value="All">All</option>
+                  <option value="Buy">Buy</option>
+                  <option value="Sell">Sell</option>
+                </select>
               </div>
             </div>
-            {/* End Filters Section */}
 
-            {/* START: Input Validation Warning Section */}
-            {validationWarning && (
-                <div className="mb-6 p-3 bg-yellow-100 border border-yellow-400 text-yellow-700 rounded-lg font-medium text-sm transition-opacity duration-300">
-                  ⚠️ {validationWarning}
+            {/* Right: date + export */}
+            <div className="flex flex-col md:flex-row gap-4 w-full md:w-2/5 justify-end">
+              <div className="flex items-center gap-2 w-full md:w-auto relative" ref={datePickerRef}>
+                <label htmlFor="dateRange" className="font-medium text-gray-700 hidden md:block">
+                  Date:
+                </label>
+                <div
+                  className="relative w-full cursor-pointer flex items-center px-4 py-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-blue-400 text-gray-700 shadow-sm"
+                  onClick={() => setShowDatePicker((v) => !v)}
+                >
+                  <input
+                    id="dateRange"
+                    type="text"
+                    className="w-full bg-transparent outline-none cursor-pointer"
+                    placeholder="Select date range"
+                    value={
+                      range.from
+                        ? `${format(new Date(range.from), 'PP')} - ${
+                            range.to ? format(new Date(range.to), 'PP') : ''
+                          }`
+                        : ''
+                    }
+                    readOnly
+                  />
+                  <Calendar className="w-5 h-5 text-gray-400 absolute right-3" />
                 </div>
-            )}
-            {/* END: Input Validation Warning Section */}
 
-            <div className="overflow-x-auto">
-              <table className="w-full table-auto border-collapse">
-                <thead>
+                {showDatePicker && (
+                  <div className="absolute top-full right-0 z-10 mt-2 bg-white rounded-lg shadow-lg p-2">
+                    <DayPicker
+                      mode="range"
+                      selected={filters.dateRange}
+                      onSelect={handleDateChange}
+                      showOutsideDays
+                      styles={{
+                        caption: { color: '#111827' }, // gray-900
+                        head_cell: { color: '#374151', fontWeight: 600 }, // gray-700
+                        day: { color: '#111827' },
+                        day_outside: { color: '#9CA3AF' }, // gray-400
+                        day_today: { border: '1px solid #2563EB' }, // blue-600
+                        day_selected: { backgroundColor: '#2563EB', color: 'white' },
+                        day_range_start: { backgroundColor: '#2563EB', color: 'white' },
+                        day_range_end: { backgroundColor: '#2563EB', color: 'white' },
+                        day_range_middle: { backgroundColor: '#DBEAFE', color: '#1F2937' }, // blue-100 / gray-800
+                        nav_button_next: { color: '#374151' },
+                        nav_button_prev: { color: '#374151' },
+                        months: { background: 'white', borderRadius: 12, padding: 8 },
+                      }}
+                    />
+                  </div>
+                )}
+              </div>
+
+              <button
+                onClick={handleExportCSV}
+                className="w-full md:w-auto px-4 py-2 bg-blue-600 text-white font-semibold rounded-lg shadow-md hover:bg-blue-800 transition duration-150 focus:outline-none focus:ring-2 focus:ring-green-400"
+              >
+                Export CSV
+              </button>
+            </div>
+          </div>
+
+          {/* warning */}
+          {validationWarning && (
+            <div className="mb-6 p-3 bg-yellow-100 border border-yellow-400 text-yellow-700 rounded-lg font-medium text-sm">
+              ⚠️ {validationWarning}
+            </div>
+          )}
+
+          {/* table */}
+          <div className="overflow-x-auto">
+            <table className="w-full table-auto border-collapse">
+              <thead>
                 <tr className="text-gray-500 uppercase text-sm tracking-wider border-b border-gray-200">
                   <th className="py-3 px-4 text-left">Trade ID</th>
                   <th className="py-3 px-4 text-left">Asset</th>
@@ -407,37 +357,42 @@ export default function TradeBacklog() {
                   <th className="py-3 px-4 text-right">Status</th>
                   <th className="py-3 px-4 text-right">Date</th>
                 </tr>
-                </thead>
-                <tbody className="text-gray-700">
+              </thead>
+              <tbody className="text-gray-700">
                 {trades.length > 0 ? (
-                    trades.map((trade) => (
-                        <tr key={trade.id} className="transition transform hover:bg-gray-100">
-                          <td className="py-4 px-4 font-medium">{trade.id}</td>
-                          <td className="py-4 px-4">{trade.asset}</td>
-                          <td
-                              className={`py-4 px-4 font-semibold ${
-                                  trade.type === "Buy" ? "text-green-600" : "text-red-600"
-                              }`}
-                          >
-                            {trade.type}
-                          </td>
-                          <td className="py-4 px-4 text-right">{trade.amount}</td>
-                          <td className="py-4 px-4 text-right">{trade.status}</td>
-                          <td className="py-4 px-4 text-right">{trade.date}</td>
-                        </tr>
-                    ))
-                ) : (
-                    <tr>
-                      <td colSpan="6" className="py-4 text-center text-gray-500">
-                        No trades found matching your criteria.
+                  trades.map((trade) => (
+                    <tr key={trade.id} className="transition transform hover:bg-gray-100">
+                      <td className="py-4 px-4 font-medium">{trade.id}</td>
+                      <td className="py-4 px-4">{trade.asset}</td>
+                      <td
+                        className={`py-4 px-4 font-semibold ${
+                          trade.type === 'Buy' ? 'text-green-600' : 'text-red-600'
+                        }`}
+                      >
+                        {trade.type}
                       </td>
+                      <td className="py-4 px-4 text-right">
+                        {Number(trade.amount).toLocaleString('en-AU', {
+                          style: 'currency',
+                          currency: 'AUD',
+                        })}
+                      </td>
+                      <td className="py-4 px-4 text-right">{trade.status}</td>
+                      <td className="py-4 px-4 text-right">{fmtDateSafe(trade.date)}</td>
                     </tr>
+                  ))
+                ) : (
+                  <tr>
+                    <td colSpan="6" className="py-4 text-center text-gray-500">
+                      No trades found matching your criteria.
+                    </td>
+                  </tr>
                 )}
-                </tbody>
-              </table>
-            </div>
+              </tbody>
+            </table>
           </div>
         </div>
-      </main>
+      </div>
+    </main>
   );
 }

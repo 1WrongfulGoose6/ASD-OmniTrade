@@ -40,6 +40,13 @@ Start the server
   npm run start
 ```
 
+## Testing
+Automated Jest unit tests and Playwright end2end tets run during the pipeline, you can run these tests locally with:
+
+```bash
+  npm test
+  npm run test:e2e
+```
 
 ## Authors
  - [Kaigagi](https://github.com/Kaigagi)

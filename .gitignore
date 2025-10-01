@@ -43,3 +43,15 @@ Thumbs.db
 !.vscode/extensions.json
 node_modules
 
+# Playwright
+/test-results/
+/playwright-report/
+/blob-report/
+/playwright/.cache/
+/playwright/.auth/
+
+# Jest Coverage
+/coverage/
+*.lcov
+
+.github/

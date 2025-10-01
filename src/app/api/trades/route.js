@@ -6,33 +6,16 @@ import { getUserIdFromCookies } from "@/utils/auth";
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
-// Optional mirror to Supabase backlog (safe to keep as no-op)
-async function mirrorToSupabase(payload) {
-  try {
-    if (!process.env.SUPABASE_URL || !process.env.SUPABASE_SERVICE_ROLE) return;
-    await fetch(`${process.env.SUPABASE_URL}/rest/v1/Trade Backlog`, {
-      method: "POST",
-      headers: {
-        apikey: process.env.SUPABASE_SERVICE_ROLE,
-        Authorization: `Bearer ${process.env.SUPABASE_SERVICE_ROLE}`,
-        "Content-Type": "application/json",
-        Prefer: "return=minimal",
-      },
-      body: JSON.stringify(payload),
-    });
-  } catch { /* ignore */ }
-}
-
 export async function GET(request) {
   const userId = await getUserIdFromCookies();
   if (!userId) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
 
   const { searchParams } = new URL(request.url);
   const symbol = searchParams.get("symbol")?.toUpperCase();
-  const status = searchParams.get("status"); // e.g., PENDING | FILLED | CANCELLED
+  const status = searchParams.get("status");
   const limit  = Math.min(Number(searchParams.get("limit") || 20), 100);
 
-  const where = { userId };
+  const where = { userId: Number(userId) };
   if (symbol) where.symbol = symbol;
   if (status) where.status = status;
 
@@ -99,7 +82,7 @@ export async function POST(request) {
 
   const trade = await prisma.trade.create({
     data: {
-      userId,
+      userId: Number(userId),
       symbol,
       side,
       qty,
@@ -108,16 +91,21 @@ export async function POST(request) {
     },
   });
 
-  
-  await mirrorToSupabase({
-    user_id: userId,
-    symbol: trade.symbol,
-    side: trade.side,
-    qty: trade.qty,
-    price: trade.price,
-    status: trade.status,
-    created_at: trade.createdAt,
-  });
+  // 2) Mirror to TradeBacklog (best-effort)
+  try {
+    await prisma.tradeBacklog.create({
+      data: {
+        userId: Number(userId),
+        asset: trade.symbol,
+        type: trade.side === "BUY" ? "Buy" : "Sell",
+        amount: Number(trade.qty) * Number(trade.price),
+        status: trade.status,
+        date: trade.createdAt, // keep timeline consistent
+      },
+    });
+  } catch (e) {
+    console.warn("[tradeBacklog mirror] failed:", e?.message);
+  }
 
   return NextResponse.json({ ok: true, trade }, { status: 200 });
 }

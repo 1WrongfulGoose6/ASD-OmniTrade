@@ -12,7 +12,22 @@ export default function ManageUsersPage() {
   const [error, setError] = React.useState(null);
   const router = useRouter();
 
-  // load all users on mount
+  //prevents non admins from accessing restricted pages
+  React.useEffect(() => {
+    (async () => {
+      try {
+        const res = await fetch('/api/auth/me', { cache: 'no-store' });
+        const data = await res.json();
+        if (!data.user || data.user.email !== 'admin@example.com') {
+          router.replace('/'); // redirect non-admins
+        }
+      } catch {
+        router.replace('/');
+      }
+    })();
+  }, [router]);
+
+  // load all (non blacklisted) users on mount
   React.useEffect(() => {
     let cancelled = false;
     (async () => {
@@ -20,11 +35,11 @@ export default function ManageUsersPage() {
       try {
         const res = await fetch('/api/admin/users', { cache: 'no-store' });
         if (!res.ok) {
-          const j = await res.json().catch(()=>({}));
+          const j = await res.json().catch(() => ({}));
           throw new Error(j.error || 'Failed to load users');
         }
         const json = await res.json();
-        if (!cancelled) setUsers(json.users || []);
+        if (!cancelled) setUsers((json.users || []).filter(u => !u.blacklisted));
       } catch (e) {
         if (!cancelled) setError(e.message || 'Failed');
       } finally {
@@ -55,7 +70,7 @@ export default function ManageUsersPage() {
           {loading && <div>Loading…</div>}
           {error && <div className="text-red-700">Error: {error}</div>}
 
-          {/* user list table */}
+          {/* active users table */}
           {!loading && !error && (
             <div className="overflow-x-auto">
               <table className="w-full text-left text-sm">
@@ -79,6 +94,7 @@ export default function ManageUsersPage() {
                         </td>
                         <td className="p-3 text-right space-x-2">
 
+                            {/*edit user*/}
                             <Link
                             href={`/admin/users/${user.id}/edit`}
                             className="rounded-full bg-blue-600 px-3 py-1 text-xs font-medium text-white shadow hover:bg-blue-700 transition cursor-pointer"
@@ -86,7 +102,7 @@ export default function ManageUsersPage() {
                             Edit
                             </Link>
 
-
+                            {/*delete user*/}
                             <button
                             onClick={async () => {
                                 if (!confirm('Delete user?')) return;
@@ -100,7 +116,17 @@ export default function ManageUsersPage() {
                             </button>
 
 
+                            {/*blacklist user*/}
                             <button
+                            onClick={async () => {
+                                const res = await fetch(`/api/admin/users/${user.id}`, {
+                                method: 'PATCH',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({ blacklisted: true }),
+                                });
+                                if (!res.ok) return alert('Failed to blacklist');
+                                setUsers(u => u.filter(x => x.id !== user.id)); // remove from current list
+                            }}
                             className="rounded-full bg-gray-600 px-3 py-1 text-xs font-medium text-white shadow hover:bg-gray-700 transition cursor-pointer"
                             >
                             Blacklist

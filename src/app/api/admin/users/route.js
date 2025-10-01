@@ -18,7 +18,7 @@ export async function GET() {
     if (!auth.ok) return NextResponse.json({ error: auth.error }, { status: auth.code });
 
     const users = await prisma.user.findMany({
-      select: { id: true, name: true, email: true, createdAt: true },
+      select: { id: true, name: true, email: true, createdAt: true, blacklisted: true, },
       orderBy: { id: 'asc' },
     });
 

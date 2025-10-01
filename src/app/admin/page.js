@@ -3,12 +3,29 @@
 import React from 'react';
 import NavBar from '@/components/NavBar';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 
 export default function AdminDashboard() {
   // user stats/numbers
   const [stats, setStats] = React.useState({ totalUsers: 0, blacklisted: 0 });
   const [loading, setLoading] = React.useState(true);
   const [error, setError] = React.useState(null);
+
+  const router = useRouter();
+  
+  React.useEffect(() => {
+    (async () => {
+      try {
+        const res = await fetch('/api/auth/me', { cache: 'no-store' });
+        const data = await res.json();
+        if (!data.user || data.user.email !== 'admin@example.com') {
+          router.replace('/'); // redirect non-admins
+        }
+      } catch {
+        router.replace('/');
+      }
+    })();
+  }, [router]);
 
   // load stats when page loads
   React.useEffect(() => {
@@ -24,7 +41,7 @@ export default function AdminDashboard() {
 
         // count totals
         setStats({
-          totalUsers: users.length,
+          activeUsers: users.filter(u => !u.blacklisted).length,
           blacklisted: users.filter(u => u.blacklisted).length,
         });
       } catch (e) {
@@ -55,17 +72,17 @@ export default function AdminDashboard() {
             <div className="rounded-2xl border border-white/25 bg-white/85 p-6 text-gray-900 backdrop-blur">
                 <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 text-center">
 
-                {/* Total Users + Manage Users */}
+                {/* Active Users + Manage Users */}
                 <div className="flex flex-col items-center justify-center space-y-3">
                     <div>
-                    <p className="text-xs uppercase tracking-wide text-gray-500">Total Users</p>
-                    <p className="mt-1 text-3xl font-bold">{stats.totalUsers}</p>
+                        <p className="text-xs uppercase tracking-wide text-gray-500">Active Users</p>
+                        <p className="mt-1 text-3xl font-bold">{stats.activeUsers}</p>
                     </div>
                     <Link
-                    href="/admin/users"
-                    className="rounded-full bg-blue-600 px-5 py-2 text-sm font-medium text-white shadow hover:bg-blue-700 transition cursor-pointer"
+                        href="/admin/users"
+                        className="rounded-full bg-blue-600 px-5 py-2 text-sm font-medium text-white shadow hover:bg-blue-700 transition cursor-pointer"
                     >
-                    Manage Users
+                        Manage Users
                     </Link>
                 </div>
 

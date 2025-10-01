@@ -3,7 +3,7 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/utils/prisma";
 import { getUserIdFromCookies } from "@/utils/auth";
 
-import bcrypt from "bcryptjs"; //for password check
+import bcrypt from "bcryptjs"; // for password check
 
 
 export const runtime = "nodejs";
@@ -17,6 +17,10 @@ export async function GET() {
     where: { id: userId },
     select: { id: true, name: true, email: true }
   });
+
+  if (!user || user.blacklisted) {
+    return NextResponse.json({ error: "This account has been blacklisted" }, { status: 403 }); // blacklisted check
+  }
 
   return NextResponse.json({ user });
 }

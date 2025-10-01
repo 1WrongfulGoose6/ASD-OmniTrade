@@ -81,3 +81,25 @@ export async function DELETE(req, { params }) {
     return NextResponse.json({ error: e.message }, { status: 500 });
   }
 }
+
+// BLACKLIST user
+export async function PATCH(req, { params }) {
+  try {
+    const auth = await requireAdmin();
+    if (!auth.ok) return NextResponse.json({ error: auth.error }, { status: auth.code });
+
+    const id = parseInt(params.id, 10);
+    const body = await req.json();
+    const { blacklisted } = body;
+
+    const updated = await prisma.user.update({
+      where: { id },
+      data: { blacklisted },
+      select: { id: true, name: true, email: true, blacklisted: true, createdAt: true },
+    });
+
+    return NextResponse.json({ user: updated });
+  } catch (e) {
+    return NextResponse.json({ error: e.message }, { status: 500 });
+  }
+}

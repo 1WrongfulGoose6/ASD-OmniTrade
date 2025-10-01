@@ -15,6 +15,7 @@ model User {
   email        String     @unique
   passwordHash String
   createdAt    DateTime   @default(now())
+  blacklisted  Boolean    @default(false)
 
   // Relations
   trades       Trade[]

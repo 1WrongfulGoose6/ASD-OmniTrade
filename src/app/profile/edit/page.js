@@ -19,6 +19,21 @@ export default function EditProfilePage() {
 
   const router = useRouter();
 
+  // redirect back to profile page if not signed in
+  useEffect(() => {
+    (async () => {
+      try {
+        const res = await fetch('/api/auth/me', { cache: 'no-store' });
+        const data = await res.json();
+        if (!data.user) {
+          router.replace('/profile'); // send user back
+        }
+      } catch {
+        router.replace('/profile');
+      }
+    })();
+  }, [router]);
+
   // load profile info
   useEffect(() => {
     let cancelled = false;

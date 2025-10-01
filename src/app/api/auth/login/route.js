@@ -16,6 +16,10 @@ export async function POST(req) {
     const user = await prisma.user.findUnique({ where: { email } });
     if (!user) return NextResponse.json({ error: "invalid credentials" }, { status: 401 });
 
+    if (user.blacklisted) {
+      return NextResponse.json({ error: "This account has been blacklisted" }, { status: 403 }); // blacklist check
+    }
+
     const ok = await bcrypt.compare(String(password), user.passwordHash);
     if (!ok) return NextResponse.json({ error: "invalid credentials" }, { status: 401 });
 

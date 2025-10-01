@@ -20,6 +20,21 @@ export default function AdminEditUserPage({ params }) {
 
   const router = useRouter();
 
+  //prevents non admins from accessing restricted pages
+  React.useEffect(() => {
+    (async () => {
+      try {
+        const res = await fetch('/api/auth/me', { cache: 'no-store' });
+        const data = await res.json();
+        if (!data.user || data.user.email !== 'admin@example.com') {
+          router.replace('/'); // redirect non-admins
+        }
+      } catch {
+        router.replace('/');
+      }
+    })();
+  }, [router]);
+
   // load the user info when page first opens
   useEffect(() => {
     let cancelled = false;

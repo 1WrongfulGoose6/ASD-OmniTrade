@@ -1,12 +1,12 @@
-// app/market-data-display/detail/[stockSymbol]/components/mainSection.js
-'use client';
+// src/app/market-data-display/detail/[stockSymbol]/components/mainSection.js
+"use client";
 
 import { ArrowLeft } from "lucide-react";
 import React, { useState, useEffect } from "react";
 import Link from "next/link";
-import GraphSection from "@/app/market-data-display/detail/[stockSymbol]/components/graphSection";
+import GraphSection from "./graphSection";
 import PropTypes from "prop-types";
-import WatchStar from "@/components/WatchStar"; // <-- NEW
+import WatchStar from "@/components/WatchStar";
 
 export default function MainSection({ stockSymbol }) {
   const [stockData, setStockData] = useState(null);
@@ -24,13 +24,12 @@ export default function MainSection({ stockSymbol }) {
       setIsLoading(true);
       setError(null);
       try {
-        const res = await fetch(`/api/marketdata/detail/${stockSymbol}`);
-        if (!res.ok) {
-          const body = await res.json().catch(() => ({ error: "Unknown server error" }));
-          throw new Error(body.error || res.statusText);
-        }
-        const data = await res.json();
-        setStockData(data);
+        // ✅ call the real route directly
+        const res = await fetch(`/api/marketdata/detail/${encodeURIComponent(stockSymbol)}`, { cache: "no-store" });
+        const body = await res.json().catch(() => ({}));
+        if (!res.ok) throw new Error(body?.error || `Server ${res.status}`);
+
+        setStockData(body);
       } catch (err) {
         setError(err.message || "An unexpected error occurred while fetching data.");
         setStockData(null);
@@ -43,7 +42,11 @@ export default function MainSection({ stockSymbol }) {
   }, [stockSymbol]);
 
   if (isLoading) {
-    return <div className="p-8 text-center text-blue-50">Loading stock details for <strong>{stockSymbol}</strong>…</div>;
+    return (
+      <div className="p-8 text-center text-blue-50">
+        Loading stock details for <strong>{stockSymbol}</strong>…
+      </div>
+    );
   }
 
   if (error) {
@@ -51,20 +54,22 @@ export default function MainSection({ stockSymbol }) {
   }
 
   if (!stockData || !stockData.name) {
-    return <div className="p-8 text-center text-white/90">No data found for <strong>{stockSymbol}</strong>.</div>;
+    return (
+      <div className="p-8 text-center text-white/90">
+        No data found for <strong>{stockSymbol}</strong>.
+      </div>
+    );
   }
 
   return (
     <div className="w-full flex flex-col h-full shadow rounded-2xl overflow-hidden gap-y-2">
       {/* Top section */}
       <div className="flex items-center justify-between p-4 px-8 border-b bg-gray-50 rounded-2xl">
-        {/* Back */}
         <Link className="flex items-center gap-2 text-blue-600 hover:text-blue-800" href={"/market-data-display/"}>
           <ArrowLeft className="w-5 h-5" />
           <span className="font-medium">Back</span>
         </Link>
 
-        {/* Stock Info */}
         <div className="flex items-center gap-5">
           <span className="text-lg font-semibold text-gray-800">
             {stockData.symbol} — {stockData.name}
@@ -72,19 +77,15 @@ export default function MainSection({ stockSymbol }) {
           <span className="text-green-600 font-bold">{stockData.currentPrice}</span>
         </div>
 
-        {/* Actions: WatchStar + Trade */}
         <div className="flex items-center gap-3">
-          <WatchStar
-            symbol={stockData.symbol}
-            name={stockData.name}
-          />
+          <WatchStar symbol={stockData.symbol} name={stockData.name} />
           <Link
             href={{
               pathname: "/trade",
               query: {
                 symbol: stockData.symbol,
                 name: stockData.name,
-                price: stockData.currentPrice,
+                price: String(stockData.currentPriceNum ?? 0),
               },
             }}
             className="px-6 py-2 bg-blue-500 text-white font-semibold rounded-xl shadow-md hover:bg-blue-600 transition"

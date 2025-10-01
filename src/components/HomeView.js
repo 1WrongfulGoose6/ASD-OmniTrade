@@ -5,15 +5,50 @@ import React from 'react';
 import Link from 'next/link';
 import NavBar from '@/components/NavBar';
 import PropTypes from 'prop-types';
+import WaveBackground from '@/components/WaveBackground';
+
+function funGreeting(nameLike) {
+  if (!nameLike) return "Welcome to OmniTrade";
+  const name = String(nameLike).split('@')[0];
+  const options = [
+    `Hey ${name}, ready to outsmart the market? 📈`,
+    `Welcome back, ${name}! Let's make some moves. 🚀`,
+    `${name}, your portfolio called—it wants a win today. 💪`,
+    `Good to see you, ${name}. Charts are looking spicy. 🌶️`,
+    `Let’s trade smart, ${name}. Onward! 🧭`,
+  ];
+  const idx = Math.abs([...name].reduce((a, c) => a + c.charCodeAt(0), 0)) % options.length;
+  return options[idx];
+}
 
 export default function HomeView({ news = [] }) {
   const top = news.slice(0, 3);
 
+  const [user, setUser] = React.useState(null);
   const [watch, setWatch] = React.useState([]);
   const [watchRows, setWatchRows] = React.useState([]);
   const [watchErr, setWatchErr] = React.useState(null);
 
-  // Load & sync watchlist
+  async function loadMe() {
+    try {
+      const res = await fetch('/api/auth/me', { cache: 'no-store' });
+      const data = await res.json();
+      setUser(data.user || null);
+    } catch {
+      setUser(null);
+    }
+  }
+
+  // Who's logged in? + react to global auth changes
+  React.useEffect(() => {
+    let off = false;
+    (async () => { if (!off) await loadMe(); })();
+    const onAuth = () => loadMe();
+    window.addEventListener('auth:changed', onAuth);
+    return () => { off = true; window.removeEventListener('auth:changed', onAuth); };
+  }, []);
+
+  // Load & sync local watchlist (client-side storage)
   React.useEffect(() => {
     let off = false;
     (async () => {
@@ -68,24 +103,17 @@ export default function HomeView({ news = [] }) {
     return () => { cancelled = true; };
   }, [watch]);
 
+  const headline = funGreeting(user?.name || user?.email);
+
   return (
     <main className="relative min-h-screen overflow-hidden bg-gradient-to-br from-blue-600 to-blue-400 text-white">
-      {/* Wavy background */}
-      <div className="absolute inset-0 z-0 overflow-hidden">
-        <svg className="absolute top-0 left-0 h-64 w-full text-white/20" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1440 320" preserveAspectRatio="none">
-          <path fill="currentColor" d="M0,128L48,133.3C96,139,192,149,288,160C384,171,480,181,576,192C672,203,768,213,864,192C960,171,1056,117,1152,117.3C1248,117,1344,171,1392,197.3L1440,224L1440,0L1392,0C1344,0,1248,0,1152,0C1056,0,960,0,864,0C768,0,672,0,576,0C480,0,384,0,288,0C192,0,96,0,48,0L0,0Z" />
-        </svg>
-        <svg className="absolute bottom-0 left-0 h-64 w-full text-white/20" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1440 320" preserveAspectRatio="none">
-          <path fill="currentColor" d="M0,288L48,266.7C96,245,192,203,288,170.7C384,139,480,117,576,133.3C672,149,768,203,864,224C960,245,1056,235,1152,213.3C1248,192,1344,160,1392,144L1440,128L1440,320L1392,320C1344,320,1248,320,1152,320C1056,320,960,320,864,320C768,320,672,320,576,320,480,320,384,320,288,320,192,320,96,320,48,320L0,0Z" />
-        </svg>
-      </div>
-
+      <WaveBackground />
       <NavBar />
 
       {/* Hero */}
       <section className="relative z-10 mx-auto max-w-6xl px-8 pt-20 text-center">
         <h1 className="mx-auto max-w-4xl text-6xl font-bold leading-tight drop-shadow">
-          Welcome to <span className="whitespace-nowrap">OmniTrade</span>
+          {headline}
         </h1>
         <div className="mt-8">
           <Link href="/portfolio" className="inline-block rounded-xl bg-white px-6 py-3 text-base font-semibold text-blue-700 shadow hover:bg-blue-50">
@@ -94,7 +122,7 @@ export default function HomeView({ news = [] }) {
         </div>
       </section>
 
-      {/* Watchlist quick view (now with price + 24h) */}
+      {/* Watchlist quick view */}
       <section className="relative z-10 mx-auto max-w-6xl px-8 pt-10">
         <div className="rounded-2xl border border-white/25 bg-white/85 p-6 text-gray-900 backdrop-blur">
           <div className="flex items-center justify-between">
@@ -116,7 +144,7 @@ export default function HomeView({ news = [] }) {
             <ul className="mt-4 grid grid-cols-1 gap-3 md:grid-cols-2 lg:grid-cols-3">
               {watchRows.slice(0, 6).map((row) => {
                 const change = (row.change ?? row.change24h ?? '').toString();
-                const isUp = change.trim().startsWith('+');
+                const isUp = change.trim().startsWith('+') || Number(row.change ?? 0) > 0;
                 return (
                   <li key={row.symbol} className="rounded-lg bg-white/70 p-4">
                     <div className="flex items-center justify-between">
@@ -171,7 +199,7 @@ export default function HomeView({ news = [] }) {
             </div>
           </div>
 
-          {/* Trending Stocks (placeholder) */}
+          {/* Trending Stocks (simple placeholder) */}
           <div className="rounded-2xl border border-white/25 bg-white/85 p-6 text-gray-900 backdrop-blur">
             <h2 className="text-lg font-semibold">Trending Stocks</h2>
             <div className="mt-4 grid grid-cols-3 gap-3 text-sm">

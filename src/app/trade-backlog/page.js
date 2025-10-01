@@ -73,6 +73,7 @@ export default function TradeBacklog() {
   const [isLoading, setIsLoading] = useState(true); // Added loading state
   const [error, setError] = useState(null); // Added error state
   const [showDatePicker, setShowDatePicker] = useState(false);
+  const [validationWarning, setValidationWarning] = useState(null);
   const datePickerRef = useRef(null);
 
   // The mock data array is removed, as it's now fetched.
@@ -95,9 +96,11 @@ export default function TradeBacklog() {
 
   function handleExportCSV(){
     if (trades.length === 0) {
-      alert("No trades found matching current criteria to export!");
+      setValidationWarning("Cannot export: No trades found matching the current filters.");
       return;
     }
+    // Clear any previous warning on successful operation
+    setValidationWarning(null);
 
     // 1. Convert the filtered JSON data to a CSV string
     const csvData = convertToCSV(trades);
@@ -145,13 +148,47 @@ export default function TradeBacklog() {
   useEffect(() => {
     // Start with the full, fetched dataset
     let filteredTrades = allTradesData;
+    let newWarning = validationWarning; // Preserve existing warning unless overwritten
+
+    // Clear warning if it was a date range issue and filters have been fixed
+    if (newWarning && newWarning.includes("date range") && filters.dateRange.from && filters.dateRange.to && (new Date(filters.dateRange.from) <= new Date(filters.dateRange.to))) {
+      newWarning = null;
+    }
+    // Clear warning if it was a search query issue and the query is now valid
+    // NOTE: The search validation logic is now primarily in handleSearchChange,
+    // but we ensure the filtering is based on the current valid state.
 
     // Apply Search Filter
     if (filters.searchQuery) {
-      filteredTrades = filteredTrades.filter(trade =>
-          trade.asset.toLowerCase().includes(filters.searchQuery.toLowerCase()) ||
-          trade.id.toLowerCase().includes(filters.searchQuery.toLowerCase())
-      );
+      // If the query is invalid, filtering should either stop or filter nothing.
+      // We rely on handleSearchChange to prevent the state from holding an invalid query
+      // that matches the validation pattern.
+
+      // This regex allows letters, numbers, spaces, and hyphens/dashes.
+      const validSearchPattern = /^[a-z\s-]+$/i;
+
+      if (validSearchPattern.test(filters.searchQuery)) {
+        filteredTrades = filteredTrades.filter(trade =>
+            trade.asset.toLowerCase().includes(filters.searchQuery.toLowerCase()) ||
+            trade.id.toLowerCase().includes(filters.searchQuery.toLowerCase())
+        );
+        // Clear any previous search-related warning if the filter is now valid and applied
+        if (newWarning && newWarning.includes("search query")) {
+          newWarning = null;
+        }
+      } else {
+        // If the query is invalid according to this effect's check (which should rarely happen
+        // if handleSearchChange is working), set the warning and filter to empty.
+        if (!newWarning || !newWarning.includes("search query")) {
+          newWarning = "Invalid search query: Please use only letters, spaces, and hyphens.";
+        }
+        filteredTrades = [];
+      }
+    } else {
+      // Clear search-related warning if search query is empty
+      if (newWarning && newWarning.includes("search query")) {
+        newWarning = null;
+      }
     }
 
     // Apply Trade Type Filter
@@ -162,43 +199,77 @@ export default function TradeBacklog() {
     // Apply Date Filter
     if (filters.dateRange.from) {
       const fromDate = new Date(filters.dateRange.from);
-      // To ensure the filter includes the whole end day, set the time to 23:59:59
-      const toDate = filters.dateRange.to ? new Date(filters.dateRange.to) : fromDate;
-      if (filters.dateRange.to) {
-        toDate.setHours(23, 59, 59, 999);
+
+      if (filters.dateRange.to && fromDate > new Date(filters.dateRange.to)) {
+        newWarning = "Invalid date range: 'From' date cannot be after 'To' date.";
+        filteredTrades = [];
       } else {
-        // If only 'from' is selected, include the whole single day
-        fromDate.setHours(0, 0, 0, 0);
-        toDate.setHours(23, 59, 59, 999);
+        // Date formatting logic remains the same
+        const toDate = filters.dateRange.to ? new Date(filters.dateRange.to) : fromDate;
+        if (filters.dateRange.to) {
+          toDate.setHours(23, 59, 59, 999);
+        } else {
+          fromDate.setHours(0, 0, 0, 0);
+          toDate.setHours(23, 59, 59, 999);
+        }
+
+        filteredTrades = filteredTrades.filter(trade => {
+          const tradeDate = new Date(trade.date);
+          return tradeDate >= fromDate && tradeDate <= toDate;
+        });
       }
-
-
-      filteredTrades = filteredTrades.filter(trade => {
-        // Note: Trade date from API should ideally be converted to Date object
-        const tradeDate = new Date(trade.date);
-        return tradeDate >= fromDate && tradeDate <= toDate;
-      });
+    } else {
+      // Clear date range warning if filters are cleared
+      if (newWarning && newWarning.includes("date range")) {
+        newWarning = null;
+      }
     }
 
     // Update the state for the table
     setTrades(filteredTrades);
+    setValidationWarning(newWarning); // Update the warning state
 
   }, [filters, allTradesData]); // Reruns when filters change or when new data is fetched (allTradesData changes)
 
+  // -----------------------------------------------------------
+  // MODIFIED HANDLER: Added Search Input Validation
+  // -----------------------------------------------------------
   const handleSearchChange = (event) => {
-    setFilters(prev => ({ ...prev, searchQuery: event.target.value }));
+    const value = event.target.value;
+    // Regex for allowing letters (a-z), numbers (0-9), spaces (\s), and hyphens (-)
+    // This covers typical asset symbols and ID formats.
+    const searchValidationRegex = /^[a-z0-9\s-]*$/i;
+
+    if (searchValidationRegex.test(value)) {
+      // Input is valid
+      setFilters(prev => ({ ...prev, searchQuery: value }));
+      setValidationWarning(null); // Clear any existing warning
+    } else {
+      // Input contains invalid characters
+      setFilters(prev => ({ ...prev, searchQuery: value })); // Still update the input value so user sees what they typed
+      setValidationWarning("Invalid search query: Please use only letters, numbers, spaces, and hyphens.");
+      // Note: The filtering effect will use the new state and handle the invalid query.
+    }
   };
 
   const handleTradeTypeChange = (event) => {
     setFilters(prev => ({ ...prev, tradeType: event.target.value }));
+    // Clear only search/date warnings, not export warning if present
+    if (validationWarning && (validationWarning.includes("search query") || validationWarning.includes("date range"))) {
+      setValidationWarning(null);
+    }
   };
 
   const handleDateChange = (range) => {
     setFilters(prev => ({ ...prev, dateRange: range }));
+    // Clear all warnings related to search or date range
+    if (validationWarning && (validationWarning.includes("search query") || validationWarning.includes("date range"))) {
+      setValidationWarning(null);
+    }
   };
 
   // -----------------------------------------------------------
-  // 3. RENDER LOGIC
+  // 3. RENDER LOGIC (No changes needed here as the warning section is already in place)
   // -----------------------------------------------------------
 
   if (isLoading) {
@@ -316,6 +387,15 @@ export default function TradeBacklog() {
               </div>
             </div>
             {/* End Filters Section */}
+
+            {/* START: Input Validation Warning Section */}
+            {validationWarning && (
+                <div className="mb-6 p-3 bg-yellow-100 border border-yellow-400 text-yellow-700 rounded-lg font-medium text-sm transition-opacity duration-300">
+                  ⚠️ {validationWarning}
+                </div>
+            )}
+            {/* END: Input Validation Warning Section */}
+
             <div className="overflow-x-auto">
               <table className="w-full table-auto border-collapse">
                 <thead>

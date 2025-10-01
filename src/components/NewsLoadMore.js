@@ -1,41 +1,32 @@
+// src/components/NewsLoadMore.js
 'use client';
 
 import React, { useMemo, useState, useEffect, useCallback } from 'react';
 import BookmarkButton from './BookmarkButton';
 import PropTypes from 'prop-types';
-
-const STORAGE_KEY = 'omni.bookmarks.v1'; // match BookmarkButton + bookmarked page
-
-function readBookmarks() {
-  try {
-    const parsed = JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]');
-    return Array.isArray(parsed) ? parsed : [];
-  } catch {
-    return [];
-  }
-}
+import { read as readStore, isBookmarkKey, getUid } from '@/lib/bookmarksStore';
 
 export default function NewsLoadMore({ items = [], initialCount = 8, step = 6 }) {
   const [visible, setVisible] = useState(initialCount);
-  const [bookmarks, setBookmarks] = useState([]);
-  const [mode, setMode] = useState('all'); // 'all' | 'bookmarked'
+  const [mode, setMode] = useState('all');       // 'all' | 'bookmarked'
+  const [uid, setUid] = useState(null);
+  const [bookmarks, setBookmarks] = useState([]); // per-user
 
-  const refreshBookmarks = useCallback(() => {
-    setBookmarks(readBookmarks());
+  useEffect(() => {
+    let alive = true;
+    (async () => { if (alive) setUid(await getUid()); })();
+    return () => { alive = false; };
   }, []);
 
-  // Load bookmarks on mount
-  useEffect(() => {
-    refreshBookmarks();
-  }, [refreshBookmarks]);
+  const refreshBookmarks = useCallback(() => {
+    setBookmarks(readStore(uid));
+  }, [uid]);
 
-  // Sync across tabs + respond to custom event fired by BookmarkButton
+  useEffect(() => { refreshBookmarks(); }, [uid, refreshBookmarks]);
+
   useEffect(() => {
-    const onStorage = (e) => {
-      if (e.key === STORAGE_KEY) refreshBookmarks();
-    };
+    const onStorage = (e) => { if (isBookmarkKey(e.key)) refreshBookmarks(); };
     const onCustom = () => refreshBookmarks();
-
     window.addEventListener('storage', onStorage);
     window.addEventListener('bookmark:changed', onCustom);
     return () => {
@@ -51,89 +42,69 @@ export default function NewsLoadMore({ items = [], initialCount = 8, step = 6 })
 
   return (
     <>
-      {/* Toolbar — LEFT aligned */}
       <div className="mb-4 flex items-center gap-3 justify-start">
         <button
           onClick={() => setMode('all')}
           className={`rounded-xl border px-3 py-1 text-sm backdrop-blur transition
-            ${mode === 'all'
-              ? 'bg-white text-blue-700 border-white'
-              : 'bg-white/10 text-white border-white/30 hover:bg-white/20'}`}
+            ${mode === 'all' ? 'bg-white text-blue-700 border-white' : 'bg-white/10 text-white border-white/30 hover:bg-white/20'}`}
         >
           All
         </button>
         <button
           onClick={() => setMode('bookmarked')}
           className={`rounded-xl border px-3 py-1 text-sm backdrop-blur transition
-            ${mode === 'bookmarked'
-              ? 'bg-white text-blue-700 border-white'
-              : 'bg-white/10 text-white border-white/30 hover:bg-white/20'}`}
+            ${mode === 'bookmarked' ? 'bg-white text-blue-700 border-white' : 'bg-white/10 text-white border-white/30 hover:bg-white/20'}`}
         >
           Bookmarked
         </button>
-
         <span className="text-white/80 text-sm ml-2">
           {mode === 'bookmarked' ? `${shown.length} saved` : `${baseList.length} headlines`}
         </span>
       </div>
 
-      {/* Grid */}
       <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
         {shown.map((n) => (
           <div
             key={n.id}
             className="group relative rounded-2xl border border-white/25 bg-white/85 p-6 text-gray-900 backdrop-blur transition hover:shadow-lg"
           >
-            {/* Top row: source/time left — bookmark top-right */}
             <div className="flex items-start justify-between">
               <div className="flex items-center gap-3 text-xs text-gray-600">
                 <span className="rounded-full bg-blue-100 px-2 py-0.5 font-medium text-blue-700">
                   {n.source ?? 'News'}
                 </span>
                 {n.datetime ? (
-                  <time
-                    dateTime={new Date(n.datetime * 1000).toISOString()}
-                    suppressHydrationWarning
-                  >
+                  <time dateTime={new Date(n.datetime * 1000).toISOString()} suppressHydrationWarning>
                     {new Date(n.datetime * 1000).toLocaleString()}
                   </time>
                 ) : null}
               </div>
-
-              {/* Bookmark — at top-right */}
               <BookmarkButton item={n} onChange={refreshBookmarks} />
             </div>
 
-            {/* Headline + summary */}
-            <a
-              href={n.url}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="mt-3 block text-xl font-semibold text-gray-900 group-hover:underline"
-            >
+            <a href={n.url} target="_blank" rel="noopener noreferrer"
+               className="mt-3 block text-xl font-semibold text-gray-900 group-hover:underline">
               {n.headline}
             </a>
-            {n.summary ? (
-              <p className="mt-2 text-sm text-gray-700">{n.summary}</p>
-            ) : null}
-
+            {n.summary ? <p className="mt-2 text-sm text-gray-700">{n.summary}</p> : null}
             <div className="mt-4 flex items-center justify-between">
-              <a
-                href={n.url}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="text-sm font-medium text-blue-700"
-              >
+              <a href={n.url} target="_blank" rel="noopener noreferrer"
+                 className="text-sm font-medium text-blue-700">
                 Read article ↗
               </a>
               <div />
             </div>
           </div>
         ))}
+
+        {shown.length === 0 && (
+          <div className="rounded-2xl border border-white/25 bg-white/85 p-6 text-gray-900 backdrop-blur">
+            {mode === 'bookmarked' ? 'No saved articles yet.' : 'No headlines right now.'}
+          </div>
+        )}
       </div>
 
-      {/* Load more */}
-      {visible < safeSource.length && (
+      {visible < safeSource.length && mode !== 'bookmarked' && (
         <div className="mt-8 flex justify-center">
           <button
             onClick={() => setVisible((v) => Math.min(v + step, safeSource.length))}
@@ -149,6 +120,11 @@ export default function NewsLoadMore({ items = [], initialCount = 8, step = 6 })
 
 NewsLoadMore.propTypes = {
   items: PropTypes.array.isRequired,
-  initialCount: PropTypes.number.isRequired,
-  step: PropTypes.number.isRequired,
+  initialCount: PropTypes.number,
+  step: PropTypes.number,
+};
+
+NewsLoadMore.defaultProps = {
+  initialCount: 8,
+  step: 6,
 };

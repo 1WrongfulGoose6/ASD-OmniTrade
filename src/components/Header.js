@@ -1,3 +1,5 @@
+// src/components/Header.js
+// Not being used, remove later if confirmed
 import React from 'react';
 import Link from 'next/link';
 

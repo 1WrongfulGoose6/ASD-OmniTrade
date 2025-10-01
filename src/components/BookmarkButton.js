@@ -1,3 +1,4 @@
+// src/components/BookmarkButton.js
 'use client';
 
 import React from 'react';
@@ -7,8 +8,11 @@ import PropTypes from 'prop-types';
 const STORAGE_KEY = 'omni.bookmarks.v1';
 
 function readStore() {
-  try { return JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]'); }
-  catch { return []; }
+  try {
+    return JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]');
+  } catch {
+    return [];
+  }
 }
 function writeStore(list) {
   localStorage.setItem(STORAGE_KEY, JSON.stringify(list));
@@ -19,15 +23,27 @@ export default function BookmarkButton({ item, onChange }) {
 
   React.useEffect(() => {
     const list = readStore();
-    setSaved(list.some(b => b.id === item.id));
+    setSaved(list.some((b) => b.id === item.id));
   }, [item.id]);
 
-  const toggle = () => {
+  const toggle = async () => {
     const list = readStore();
+
     if (saved) {
-      writeStore(list.filter(b => b.id !== item.id));
+      // 1) local remove for instant UI
+      writeStore(list.filter((b) => b.id !== item.id));
       setSaved(false);
+
+      // 2) background remove to DB (best-effort)
+      try {
+        const u = new URL('/api/bookmarks', window.location.origin);
+        u.searchParams.set('articleId', item.id);
+        await fetch(u.toString(), { method: 'DELETE' });
+      } catch {
+        // swallow errors for demo; UI stays responsive
+      }
     } else {
+      // 1) local add for instant UI
       const toSave = {
         id: item.id,
         headline: item.headline,
@@ -39,12 +55,28 @@ export default function BookmarkButton({ item, onChange }) {
       };
       writeStore([toSave, ...list].slice(0, 200));
       setSaved(true);
+
+      // 2) background add to DB (best-effort)
+      try {
+        await fetch('/api/bookmarks', {
+          method: 'POST',
+          headers: { 'content-type': 'application/json' },
+          body: JSON.stringify({
+            articleId: item.id,
+            title: item.headline,
+            url: item.url,
+          }),
+        });
+      } catch {
+        // swallow errors for demo
+      }
     }
+
     onChange?.();
     window.dispatchEvent(new Event('bookmark:changed'));
   };
 
-  // Stronger, high-contrast styles
+  // Stronger, high-contrast styles (your original styles preserved)
   const base =
     'inline-flex items-center gap-2 rounded-full px-3 py-1.5 text-sm font-medium ' +
     'shadow-md ring-2 transition focus:outline-none focus:ring-4';
@@ -62,12 +94,7 @@ export default function BookmarkButton({ item, onChange }) {
       onClick={toggle}
       className={`${base} ${saved ? visibleSaved : visibleIdle}`}
     >
-      {saved ? (
-        <BookmarkCheck className="h-5 w-5" />
-      ) : (
-        <Bookmark className="h-5 w-5" />
-      )}
-      {/* Show a small text label on md+ so it’s extra obvious */}
+      {saved ? <BookmarkCheck className="h-5 w-5" /> : <Bookmark className="h-5 w-5" />}
       <span className="hidden md:inline">{saved ? 'Saved' : 'Save'}</span>
     </button>
   );

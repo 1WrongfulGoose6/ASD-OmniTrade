@@ -1,3 +1,4 @@
+// src/app/market-data-display/detail/[stockSymbol]/layout.js
 'use client';
 
 import React from 'react';

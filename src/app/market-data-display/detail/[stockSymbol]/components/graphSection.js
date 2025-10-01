@@ -1,8 +1,9 @@
+// src/app/market-data-display/detail/[stockSymbol]/components/graphSection.js
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid, Label } from "recharts";
 import React from "react";
 import PropTypes from "prop-types";
 
-export default function GraphSection({ data }) {
+export default function GraphSection({ data = [] }) {
   return (
     <div className="bg-white/90 w-full">
       <div className="flex gap-10">

@@ -11,11 +11,11 @@ function funGreeting(nameLike) {
   if (!nameLike) return "Welcome to OmniTrade";
   const name = String(nameLike).split('@')[0];
   const options = [
-    `Hey ${name}, ready to outsmart the market? 📈`,
-    `Welcome back, ${name}! Let's make some moves. 🚀`,
-    `${name}, your portfolio called—it wants a win today. 💪`,
-    `Good to see you, ${name}. Charts are looking spicy. 🌶️`,
-    `Let’s trade smart, ${name}. Onward! 🧭`,
+    `Hey ${name}, ready to outsmart the market?`,
+    `Welcome back, ${name}! Let's make some moves.`,
+    `${name}, your portfolio called—it wants a win today.`,
+    `Good to see you, ${name}. Charts are looking spicy.`,
+    `Let’s trade smart, ${name}. Onward!`,
   ];
   const idx = Math.abs([...name].reduce((a, c) => a + c.charCodeAt(0), 0)) % options.length;
   return options[idx];
@@ -48,26 +48,31 @@ export default function HomeView({ news = [] }) {
     return () => { off = true; window.removeEventListener('auth:changed', onAuth); };
   }, []);
 
-  // Load & sync local watchlist (client-side storage)
+  // Load server watchlist
   React.useEffect(() => {
     let off = false;
-    (async () => {
-      const mod = await import('@/lib/watchlist');
-      if (off) return;
 
-      const refresh = () => setWatch(mod.readWatchlist());
-      refresh();
+    const load = async () => {
+      try {
+        const res = await fetch('/api/watchlist', { cache: 'no-store' });
+        const data = await res.json().catch(() => ({}));
+        const items = Array.isArray(data.items) ? data.items : [];
+        const list = items.map(i => ({ symbol: i.symbol, name: i.name || i.symbol }));
+        if (!off) setWatch(list);
+      } catch {
+        if (!off) setWatch([]);
+      }
+    };
 
-      const onChange = () => refresh();
-      window.addEventListener('watchlist:changed', onChange);
-      window.addEventListener('storage', onChange);
+    load();
 
-      return () => {
-        window.removeEventListener('watchlist:changed', onChange);
-        window.removeEventListener('storage', onChange);
-      };
-    })();
-    return () => { off = true; };
+    const onChanged = () => load();
+    window.addEventListener('watchlist:changed', onChanged);
+
+    return () => {
+      off = true;
+      window.removeEventListener('watchlist:changed', onChanged);
+    };
   }, []);
 
   // Fetch market data and filter to watchlist symbols

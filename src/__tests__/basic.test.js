@@ -13,12 +13,12 @@ jest.mock('@/components/NavBar', () => {
 });
 
 // Mock watchlist helpers used by HomeView's useEffect
-jest.mock('@/lib/watchlist', () => ({
-  readWatchlist: () => [],
-  addToWatchlist: jest.fn(),
-  removeFromWatchlist: jest.fn(),
-  isWatched: jest.fn(() => false),
-}));
+// jest.mock('@/lib/watchlist', () => ({
+//   readWatchlist: () => [],
+//   addToWatchlist: jest.fn(),
+//   removeFromWatchlist: jest.fn(),
+//   isWatched: jest.fn(() => false),
+// }));
 
 // Minimal news payload
 const sampleNews = [

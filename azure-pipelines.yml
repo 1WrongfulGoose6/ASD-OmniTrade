@@ -25,9 +25,25 @@ stages:
               path: 'node_modules'
               cacheHitVar: 'NPM_CACHE_RESTORED'
 
+          - task: Cache@2
+            displayName: 'Cache Prisma Client'
+            inputs:
+              key: 'prisma | "$(Agent.OS)" | prisma/schema.prisma'
+              path: 'node_modules/.prisma'
+              cacheHitVar: 'PRISMA_CACHE_RESTORED'
+
           - script: npm install
             displayName: 'Install Dependencies'
             condition: ne(variables.NPM_CACHE_RESTORED, 'true')
+
+          - script: |
+              echo "FINNHUB_API_KEY=d313k2hr01qnu2r0cfkgd313k2hr01qnu2r0cfl0" > .env
+              echo 'DATABASE_URL="file:./prisma/omni.db"' >> .env
+            displayName: 'Set up Environment Variables'
+
+          - script: npx prisma generate
+            displayName: 'Generate Prisma Client'
+            condition: ne(variables.PRISMA_CACHE_RESTORED, 'true')
 
           - script: npm run lint
             displayName: 'Run ESLint'
@@ -47,9 +63,28 @@ stages:
               path: 'node_modules'
               cacheHitVar: 'NPM_CACHE_RESTORED'
 
+          - task: Cache@2
+            displayName: 'Cache Prisma Client'
+            inputs:
+              key: 'prisma | "$(Agent.OS)" | prisma/schema.prisma'
+              path: 'node_modules/.prisma'
+              cacheHitVar: 'PRISMA_CACHE_RESTORED'
+
           - script: npm install
             displayName: 'Install Dependencies'
             condition: ne(variables.NPM_CACHE_RESTORED, 'true')
+
+          - script: |
+              echo "FINNHUB_API_KEY=d313k2hr01qnu2r0cfkgd313k2hr01qnu2r0cfl0" > .env
+              echo 'DATABASE_URL="file:./prisma/omni.db"' >> .env
+            displayName: 'Set up Environment Variables'
+
+          - script: npx prisma generate
+            displayName: 'Generate Prisma Client'
+            condition: ne(variables.PRISMA_CACHE_RESTORED, 'true')
+
+          - script: npx prisma db push
+            displayName: 'Set up Database Schema'
 
           - script: npx playwright install --with-deps
             displayName: 'Install Playwright Browsers'
@@ -92,9 +127,28 @@ stages:
               path: 'node_modules'
               cacheHitVar: 'NPM_CACHE_RESTORED'
 
+          - task: Cache@2
+            displayName: 'Cache Prisma Client'
+            inputs:
+              key: 'prisma | "$(Agent.OS)" | prisma/schema.prisma'
+              path: 'node_modules/.prisma'
+              cacheHitVar: 'PRISMA_CACHE_RESTORED'
+
           - script: npm install
             displayName: 'Install Dependencies'
             condition: ne(variables.NPM_CACHE_RESTORED, 'true')
+
+          - script: |
+              echo "FINNHUB_API_KEY=d313k2hr01qnu2r0cfkgd313k2hr01qnu2r0cfl0" > .env
+              echo 'DATABASE_URL="file:./prisma/omni.db"' >> .env
+            displayName: 'Set up Environment Variables'
+
+          - script: npx prisma generate
+            displayName: 'Generate Prisma Client'
+            condition: ne(variables.PRISMA_CACHE_RESTORED, 'true')
+
+          - script: npx prisma db push
+            displayName: 'Set up Database Schema'
 
           - script: npm run build
             displayName: 'Build React App'
@@ -108,6 +162,8 @@ stages:
                 public/**
                 package.json
                 next.config.mjs
+                prisma/**
+                .env
               TargetFolder: '$(Build.ArtifactStagingDirectory)'
 
           - task: PublishBuildArtifacts@1

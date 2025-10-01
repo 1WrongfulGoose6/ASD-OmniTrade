@@ -86,8 +86,8 @@ stages:
           - script: npx prisma db push
             displayName: 'Set up Database Schema'
 
-          - script: npx playwright install --with-deps
-            displayName: 'Install Playwright Browsers'
+          - script: npx playwright install --with-deps chromium
+            displayName: 'Install Playwright Chromium Browser'
 
           - script: npm run test:ci
             displayName: 'Run Jest Tests (CI)'

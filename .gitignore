@@ -38,4 +38,8 @@ node_modules
 /playwright/.cache/
 /playwright/.auth/
 
+# Jest Coverage
+/coverage/
+*.lcov
+
 .github/

@@ -70,6 +70,16 @@ stages:
               path: 'node_modules/.prisma'
               cacheHitVar: 'PRISMA_CACHE_RESTORED'
 
+          - task: Cache@2
+            displayName: 'Cache Jest Coverage'
+            inputs:
+              key: 'jest-coverage | "$(Agent.OS)" | package-lock.json | $(Build.SourcesDirectory)/src/**'
+              restoreKeys: |
+                jest-coverage | "$(Agent.OS)" | package-lock.json
+                jest-coverage | "$(Agent.OS)"
+              path: 'coverage'
+              cacheHitVar: 'COVERAGE_CACHE_RESTORED'
+
           - script: npm install
             displayName: 'Install Dependencies'
             condition: ne(variables.NPM_CACHE_RESTORED, 'true')
@@ -89,8 +99,8 @@ stages:
           - script: npx playwright install --with-deps chromium
             displayName: 'Install Playwright Chromium Browser'
 
-          - script: npm run test:ci
-            displayName: 'Run Jest Tests (CI)'
+          - script: npm run test:coverage
+            displayName: 'Run Jest Tests with Coverage (CI)'
             env:
               CI: true
 
@@ -112,6 +122,14 @@ stages:
               testResultsFormat: 'JUnit'
               testResultsFiles: 'test-results/**/*.xml'
               failTaskOnFailedTests: true
+
+          - task: PublishCodeCoverageResults@1
+            displayName: 'Publish Code Coverage Results'
+            inputs:
+              codeCoverageTool: 'Cobertura'
+              summaryFileLocation: 'coverage/cobertura-coverage.xml'
+              reportDirectory: 'coverage'
+              failIfCoverageEmpty: false
 
       - job: Build
         displayName: 'Build Application'
@@ -187,6 +205,7 @@ stages:
                 package.json
                 next.config.mjs
                 prisma/**
+                coverage/**
                 .env
               TargetFolder: '$(Build.ArtifactStagingDirectory)'
 

@@ -49,12 +49,6 @@ export async function PUT(req, { params }) {
     }
 
     const data = { name, email };
-    if (password) {
-      if (password.length < 8) {
-        return NextResponse.json({ error: 'password too short' }, { status: 400 });
-      }
-      data.passwordHash = await bcrypt.hash(password, 10);
-    }
 
     const updated = await prisma.user.update({
       where: { id },

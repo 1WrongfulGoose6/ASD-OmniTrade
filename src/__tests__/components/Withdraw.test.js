@@ -1,17 +1,12 @@
 import React from 'react';
-import { render, screen, fireEvent, act, waitFor } from '@testing-library/react';
-import DepositPage from '@/app/deposit/page';
+import { render, screen, fireEvent, act } from '@testing-library/react';
+import DepositPage from '@/app/withdraw/page';
 import { useRouter } from 'next/navigation';
 
-const mockPush = jest.fn();
-
-
+// Mock router
 jest.mock('next/navigation', () => ({
-  useRouter: () => {
-    return { push: mockPush };
-  },
+  useRouter: jest.fn(() => ({ push: jest.fn() })),
 }));
-
 
 describe('DepositPage validation', () => {
   test('Display Error Message for invalid amount', async () => {
@@ -19,11 +14,11 @@ describe('DepositPage validation', () => {
       render(<DepositPage />);
     });
 
-    const input = screen.getByPlaceholderText(/100\.00/i);
+    const amountInput = screen.getByPlaceholderText(/100\.00/i);
     const form = screen.getByRole('form');
 
     await act(async () => {
-      fireEvent.change(input, { target: { value: '-1' } });
+      fireEvent.change(amountInput, { target: { value: '-1' } });
       fireEvent.submit(form);
     });
 
@@ -87,31 +82,5 @@ describe('DepositPage validation', () => {
     const errorMsg = await screen.findByText("Invalid month.");
     expect(errorMsg).toBeInTheDocument();
   });
-
-  // test('redirects after successful deposit', async () => { TODO: fix this test later
-  //   render(<DepositPage />);
-
-  //   const AmountInput = screen.getByPlaceholderText(/100\.00/i);
-  //   const CardInput = screen.getByPlaceholderText(/1234 5678 9012 3456/i);
-  //   const CVVInput = screen.getByPlaceholderText(/111/i);
-  //   const ExpInput = screen.getByPlaceholderText("MM/YY");
-  //   const form = screen.getByRole('form');
-  //   fireEvent.change(AmountInput, { target: { value: '100' } });
-  //   fireEvent.change(CardInput, { target: { value: '123456789123456' } });
-  //   fireEvent.change(ExpInput, { target: { value: '15/12' } });
-  //   fireEvent.change(CVVInput, { target: { value: '123' } });
-
-  //   global.fetch = jest.fn().mockResolvedValueOnce({
-  //     ok: true,
-  //     headers: { get: () => 'application/json' },
-  //     json: async () => ({ success: true }),
-  //   });
-
-  //   fireEvent.submit(form);
-  //   await new Promise((resolve) => setTimeout(resolve, 1200));
-  //   await waitFor(() => {
-  //     expect(mockPush).toHaveBeenCalled();
-  //   });
-  // });
 
 });

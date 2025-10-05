@@ -27,7 +27,6 @@ export default function DepositPage() {
 
   const validateForm = () => {
     let newErrors = {};
-    console.log("validateForm called", newErrors);
 
     // Amount
     const amt = Number(amount);

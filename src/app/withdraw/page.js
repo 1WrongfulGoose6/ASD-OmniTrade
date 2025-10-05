@@ -107,7 +107,7 @@ export default function WithdrawPage() {
         <div className="w-full max-w-md rounded-2xl border border-white/25 bg-white/90 p-8 text-gray-900 shadow-lg backdrop-blur">
           <h1 className="mb-6 text-center text-2xl font-bold">Withdraw Funds</h1>
 
-          <form onSubmit={handleSubmit} role="form" className="space-y-4">
+          <form role="form" onSubmit={handleSubmit} className="space-y-4">
             <div>
               <label className="block text-sm font-medium text-gray-700">Card Number</label>
               <div className="flex items-center gap-2">

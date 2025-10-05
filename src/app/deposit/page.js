@@ -27,6 +27,7 @@ export default function DepositPage() {
 
   const validateForm = () => {
     let newErrors = {};
+    console.log("validateForm called", newErrors);
 
     // Amount
     const amt = Number(amount);
@@ -101,6 +102,7 @@ export default function DepositPage() {
     } finally {
       setBusy(false);
     }
+
   };
 
   return (
@@ -112,12 +114,14 @@ export default function DepositPage() {
         <div className="w-full max-w-md rounded-2xl border border-white/25 bg-white/90 p-8 text-gray-900 shadow-lg backdrop-blur">
           <h1 className="mb-6 text-center text-2xl font-bold">Deposit Funds</h1>
 
-          <form onSubmit={handleSubmit} className="space-y-4">
+          <form role="form" onSubmit={handleSubmit} className="space-y-4">
+
             {/* Card Number */}
             <div>
               <label className="block text-sm font-medium text-gray-700">Card Number</label>
               <div className="flex items-center gap-2">
                 <input
+                  id="cardNumber"
                   type="text"
                   inputMode="numeric"
                   value={cardNumber}
@@ -159,7 +163,7 @@ export default function DepositPage() {
                   type="password"
                   value={cvv}
                   onChange={(e) => setCvv(e.target.value)}
-                  placeholder="123"
+                  placeholder="111"
                   className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
                   required
                 />
@@ -167,10 +171,17 @@ export default function DepositPage() {
               </div>
             </div>
 
-            {/* Amount */}
             <div>
-              <label className="block text-sm font-medium text-gray-700">Amount (AUD)</label>
+              <label
+                htmlFor="amount"
+                className="block text-sm font-medium text-gray-700"
+              >
+                Amount (AUD)
+              </label>
+
               <input
+                id="amount"
+                name="amount"
                 type="number"
                 placeholder="100.00"
                 min="1"
@@ -180,7 +191,10 @@ export default function DepositPage() {
                 className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
                 required
               />
-              {errors.amount && <p className="text-red-500 text-sm">{errors.amount}</p>}
+
+              {errors.amount && (
+                <p className="text-re d-500 text-sm">{errors.amount}</p>
+              )}
             </div>
 
             <button

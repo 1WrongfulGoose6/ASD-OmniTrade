@@ -1,53 +1,3 @@
-trigger:
-  branches:
-    include:
-      - '*'
-
-pool:
-  vmImage: ubuntu-latest
-
-stages:
-  - stage: CI
-    displayName: 'Continuous Integration'
-    jobs:
-      - job: Lint
-        displayName: 'Lint Code'
-        steps:
-          - task: UseNode@1
-            inputs:
-              version: '18.x'
-            displayName: 'Use Node.js 18.x'
-
-          - task: Cache@2
-            displayName: 'Cache node_modules'
-            inputs:
-              key: 'npm | "$(Agent.OS)" | package.json'
-              path: 'node_modules'
-              cacheHitVar: 'NPM_CACHE_RESTORED'
-
-          - task: Cache@2
-            displayName: 'Cache Prisma Client'
-            inputs:
-              key: 'prisma | "$(Agent.OS)" | prisma/schema.prisma'
-              path: 'node_modules/.prisma'
-              cacheHitVar: 'PRISMA_CACHE_RESTORED'
-
-          - script: npm install
-            displayName: 'Install Dependencies'
-            condition: ne(variables.NPM_CACHE_RESTORED, 'true')
-
-          - script: |
-              echo "FINNHUB_API_KEY=d313k2hr01qnu2r0cfkgd313k2hr01qnu2r0cfl0" > .env
-              echo 'DATABASE_URL="file:./prisma/omni.db"' >> .env
-            displayName: 'Set up Environment Variables'
-
-          - script: npx prisma generate
-            displayName: 'Generate Prisma Client'
-            condition: ne(variables.PRISMA_CACHE_RESTORED, 'true')
-
-          - script: npm run lint
-            displayName: 'Run ESLint'
-
       - job: Test
         displayName: 'Run Tests'
         steps:
@@ -99,30 +49,35 @@ stages:
           - script: npx playwright install --with-deps chromium
             displayName: 'Install Playwright Chromium Browser'
 
+          # Run Jest tests and produce junit XML for Azure
           - script: npm run test:coverage
             displayName: 'Run Jest Tests with Coverage (CI)'
             env:
               CI: true
 
+          # Publish Jest results explicitly
+          - task: PublishTestResults@2
+            displayName: 'Publish Jest Test Results'
+            inputs:
+              testResultsFormat: 'JUnit'
+              testResultsFiles: 'test-results/jest-junit.xml'
+              failTaskOnFailedTests: true
+
+          # Run Playwright E2E tests
           - script: npm run test:e2e:ci
             displayName: 'Run Playwright E2E Tests (CI)'
             env:
               CI: true
 
-          - task: PublishTestResults@2
-            displayName: 'Publish Jest Test Results'
-            inputs:
-              testResultsFormat: 'JUnit'
-              testResultsFiles: 'test-results/**/*.xml'
-              failTaskOnFailedTests: true
-
+          # Publish Playwright results explicitly
           - task: PublishTestResults@2
             displayName: 'Publish Playwright Test Results'
             inputs:
               testResultsFormat: 'JUnit'
-              testResultsFiles: 'test-results/**/*.xml'
+              testResultsFiles: 'test-results/JUnit_playwright-results.xml'
               failTaskOnFailedTests: true
 
+          # Publish code coverage
           - task: PublishCodeCoverageResults@2
             displayName: 'Publish Code Coverage Results'
             inputs:
@@ -130,88 +85,3 @@ stages:
               pathToSources: 'src/'
               reportDirectory: 'coverage'
               failIfCoverageEmpty: false
-
-      - job: Build
-        displayName: 'Build Application'
-        dependsOn:
-          - Lint
-          - Test
-        steps:
-          - task: UseNode@1
-            inputs:
-              version: '18.x'
-            displayName: 'Use Node.js 18.x'
-
-          - task: Cache@2
-            displayName: 'Cache node_modules'
-            inputs:
-              key: 'npm | "$(Agent.OS)" | package.json'
-              path: 'node_modules'
-              cacheHitVar: 'NPM_CACHE_RESTORED'
-
-          - task: Cache@2
-            displayName: 'Cache Prisma Client'
-            inputs:
-              key: 'prisma | "$(Agent.OS)" | prisma/schema.prisma'
-              path: 'node_modules/.prisma'
-              cacheHitVar: 'PRISMA_CACHE_RESTORED'
-
-          - task: Cache@2
-            displayName: 'Cache Next.js Build'
-            inputs:
-              key: 'nextjs | "$(Agent.OS)" | package-lock.json | next.config.mjs | $(Build.SourcesDirectory)/src/**'
-              restoreKeys: |
-                nextjs | "$(Agent.OS)" | package-lock.json | next.config.mjs
-                nextjs | "$(Agent.OS)" | package-lock.json
-                nextjs | "$(Agent.OS)"
-              path: '.next/cache'
-              cacheHitVar: 'NEXTJS_CACHE_RESTORED'
-
-          - script: npm install
-            displayName: 'Install Dependencies'
-            condition: ne(variables.NPM_CACHE_RESTORED, 'true')
-
-          - script: |
-              echo "FINNHUB_API_KEY=d313k2hr01qnu2r0cfkgd313k2hr01qnu2r0cfl0" > .env
-              echo 'DATABASE_URL="file:./prisma/omni.db"' >> .env
-            displayName: 'Set up Environment Variables'
-
-          - script: npx prisma generate
-            displayName: 'Generate Prisma Client'
-            condition: ne(variables.PRISMA_CACHE_RESTORED, 'true')
-
-          - script: npx prisma db push
-            displayName: 'Set up Database Schema'
-
-          - script: mkdir -p .next/cache
-            displayName: 'Ensure Next.js Cache Directory Exists'
-
-          - script: |
-              echo "Next.js cache restored: $(NEXTJS_CACHE_RESTORED)"
-              ls -la .next/cache || echo "Cache directory is empty"
-            displayName: 'Display Cache Status'
-
-          - script: npm run build
-            displayName: 'Build React App'
-
-          - task: CopyFiles@2
-            displayName: 'Copy Files to Artifact Staging Directory'
-            inputs:
-              SourceFolder: '$(System.DefaultWorkingDirectory)'
-              Contents: |
-                .next/**
-                !.next/cache/**
-                public/**
-                package.json
-                next.config.mjs
-                prisma/**
-                coverage/**
-                .env
-              TargetFolder: '$(Build.ArtifactStagingDirectory)'
-
-          - task: PublishBuildArtifacts@1
-            displayName: 'Publish Artifact: WebApp'
-            inputs:
-              PathtoPublish: '$(Build.ArtifactStagingDirectory)'
-              ArtifactName: 'WebApp'
-              publishLocation: 'Container'

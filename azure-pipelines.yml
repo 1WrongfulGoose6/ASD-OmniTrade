@@ -216,28 +216,28 @@ stages:
               ArtifactName: 'WebApp'
               publishLocation: 'Container'
 
-# Deploy to Azure App Service
-- stage: Deploy
-  displayName: 'Deploy to Azure App Service'
-  dependsOn: CI
-  jobs:
-    - deployment: DeployWeb
-      displayName: 'Deploy Web App to Azure'
-      environment: 'production'
-      pool:
-        vmImage: ubuntu-latest
-      strategy:
-        runOnce:
-          deploy:
-            steps:
-              - download: current
-                artifact: WebApp
-              - task: AzureWebApp@1
-                displayName: 'Deploy to Azure Web App'
-                inputs:
-                  azureSubscription: 'OmniTrade Connection'
-                  appType: 'webAppLinux'
-                  appName: 'OmniTrade'
-                  resourceGroupName: 'OmniTrade'
-                  package: '$(Pipeline.Workspace)/WebApp'
-                  runtimeStack: 'NODE|18-lts'
+  # Deploy to Azure App Service
+  - stage: Deploy
+    displayName: 'Deploy to Azure App Service'
+    dependsOn: CI
+    jobs:
+      - deployment: DeployWeb
+        displayName: 'Deploy Web App to Azure'
+        environment: 'production'
+        pool:
+          vmImage: ubuntu-latest
+        strategy:
+          runOnce:
+            deploy:
+              steps:
+                - download: current
+                  artifact: WebApp
+                - task: AzureWebApp@1
+                  displayName: 'Deploy to Azure Web App'
+                  inputs:
+                    azureSubscription: 'OmniTrade Connection'
+                    appType: 'webAppLinux'
+                    appName: 'OmniTrade'
+                    resourceGroupName: 'OmniTrade'
+                    package: '$(Pipeline.Workspace)/WebApp'
+                    runtimeStack: 'NODE|18-lts'

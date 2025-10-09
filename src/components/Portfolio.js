@@ -5,6 +5,7 @@ import React, { useEffect, useState } from "react";
 import Link from "next/link";
 import NavBar from "@/components/NavBar";
 import WaveBackground from "@/components/WaveBackground";
+import PortfolioChart from "@/components/PortfolioChart";
 
 export default function Portfolio() {
   const [range, setRange] = useState("24h");
@@ -139,6 +140,24 @@ export default function Portfolio() {
                 </Link>
               </div>
             </div>
+          )}
+        </div>
+      </section>
+
+      {/* Portfolio Chart */}
+      <section className="relative z-10 mx-auto max-w-6xl px-8 py-4">
+        <div className="rounded-2xl border border-white/25 bg-white/85 p-6 text-gray-900 backdrop-blur">
+          <h2 className="text-lg font-semibold mb-4">Portfolio Performance</h2>
+          {loading ? (
+            <div className="h-64 flex items-center justify-center bg-gray-200 rounded-2xl">
+              <div className="text-gray-600">Loading chart...</div>
+            </div>
+          ) : err ? (
+            <div className="h-64 flex items-center justify-center bg-gray-200 rounded-2xl">
+              <div className="text-red-600">Unable to load chart: {err}</div>
+            </div>
+          ) : (
+            <PortfolioChart />
           )}
         </div>
       </section>

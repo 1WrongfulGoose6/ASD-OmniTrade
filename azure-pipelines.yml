@@ -1,3 +1,5 @@
+## Author: Ali Bonagdaran
+
 trigger:
   branches:
     include:
@@ -6,33 +8,29 @@ trigger:
 pool:
   vmImage: ubuntu-latest
 
+variables:
+  nodeVersion: '18.x'
+  
 stages:
   - stage: CI
     displayName: 'Continuous Integration'
     jobs:
-      - job: Lint
-        displayName: 'Lint Code'
+      - job: Setup
+        displayName: 'Setup Dependencies'
         steps:
           - task: UseNode@1
             inputs:
-              version: '18.x'
-            displayName: 'Use Node.js 18.x'
+              version: $(nodeVersion)
+            displayName: 'Use Node.js $(nodeVersion)'
 
           - task: Cache@2
             displayName: 'Cache node_modules'
             inputs:
-              key: 'npm | "$(Agent.OS)" | package.json'
+              key: 'npm | "$(Agent.OS)" | package-lock.json'
               path: 'node_modules'
               cacheHitVar: 'NPM_CACHE_RESTORED'
 
-          - task: Cache@2
-            displayName: 'Cache Prisma Client'
-            inputs:
-              key: 'prisma | "$(Agent.OS)" | prisma/schema.prisma'
-              path: 'node_modules/.prisma'
-              cacheHitVar: 'PRISMA_CACHE_RESTORED'
-
-          - script: npm install
+          - script: npm ci
             displayName: 'Install Dependencies'
             condition: ne(variables.NPM_CACHE_RESTORED, 'true')
 
@@ -43,201 +41,109 @@ stages:
 
           - script: npx prisma generate
             displayName: 'Generate Prisma Client'
-            condition: ne(variables.PRISMA_CACHE_RESTORED, 'true')
-
-          - script: npm run lint
-            displayName: 'Run ESLint'
-
-      - job: Test
-        displayName: 'Run Tests'
-        steps:
-          - task: UseNode@1
-            inputs:
-              version: '18.x'
-            displayName: 'Use Node.js 18.x'
-
-          - task: Cache@2
-            displayName: 'Cache node_modules'
-            inputs:
-              key: 'npm | "$(Agent.OS)" | package.json'
-              path: 'node_modules'
-              cacheHitVar: 'NPM_CACHE_RESTORED'
-
-          - task: Cache@2
-            displayName: 'Cache Prisma Client'
-            inputs:
-              key: 'prisma | "$(Agent.OS)" | prisma/schema.prisma'
-              path: 'node_modules/.prisma'
-              cacheHitVar: 'PRISMA_CACHE_RESTORED'
-
-          - task: Cache@2
-            displayName: 'Cache Jest Coverage'
-            inputs:
-              key: 'jest-coverage | "$(Agent.OS)" | package-lock.json | $(Build.SourcesDirectory)/src/**'
-              restoreKeys: |
-                jest-coverage | "$(Agent.OS)" | package-lock.json
-                jest-coverage | "$(Agent.OS)"
-              path: 'coverage'
-              cacheHitVar: 'COVERAGE_CACHE_RESTORED'
-
-          - script: npm install
-            displayName: 'Install Dependencies'
-            condition: ne(variables.NPM_CACHE_RESTORED, 'true')
-
-          - script: |
-              echo "FINNHUB_API_KEY=d313k2hr01qnu2r0cfkgd313k2hr01qnu2r0cfl0" > .env
-              echo 'DATABASE_URL="file:./prisma/omni.db"' >> .env
-            displayName: 'Set up Environment Variables'
-
-          - script: npx prisma generate
-            displayName: 'Generate Prisma Client'
-            condition: ne(variables.PRISMA_CACHE_RESTORED, 'true')
 
           - script: npx prisma db push
             displayName: 'Set up Database Schema'
 
+      - job: QualityChecks
+        displayName: 'Quality Checks'
+        dependsOn: Setup
+        strategy:
+          matrix:
+            Lint:
+              testType: 'lint'
+              command: 'npm run lint'
+            UnitTest:
+              testType: 'unit'
+              command: 'npm run test:coverage'
+            E2ETest:
+              testType: 'e2e'
+              command: 'npm run test:e2e:ci'
+        steps:
+          - task: UseNode@1
+            inputs:
+              version: $(nodeVersion)
+
+          - task: Cache@2
+            inputs:
+              key: 'npm | "$(Agent.OS)" | package-lock.json'
+              path: 'node_modules'
+
+          - script: |
+              echo "FINNHUB_API_KEY=d313k2hr01qnu2r0cfkgd313k2hr01qnu2r0cfl0" > .env
+              echo 'DATABASE_URL="file:./prisma/omni.db"' >> .env
+
+          - script: npx prisma generate
+
           - script: npx playwright install --with-deps chromium
-            displayName: 'Install Playwright Chromium Browser'
+            condition: eq(variables['testType'], 'e2e')
 
-          - script: npm run test:coverage
-            displayName: 'Run Jest Tests with Coverage (CI)'
-            env:
-              CI: true
-
-          - script: npm run test:e2e:ci
-            displayName: 'Run Playwright E2E Tests (CI)'
+          - script: $(command)
+            displayName: 'Run $(testType)'
             env:
               CI: true
 
           - task: PublishTestResults@2
-            displayName: 'Publish Jest Test Results'
+            condition: in(variables['testType'], 'unit', 'e2e')
             inputs:
               testResultsFormat: 'JUnit'
               testResultsFiles: 'test-results/**/*.xml'
-              failTaskOnFailedTests: true
-
-          - task: PublishTestResults@2
-            displayName: 'Publish Playwright Test Results'
-            inputs:
-              testResultsFormat: 'JUnit'
-              testResultsFiles: 'test-results/**/*.xml'
-              failTaskOnFailedTests: true
 
           - task: PublishCodeCoverageResults@2
-            displayName: 'Publish Code Coverage Results'
+            condition: eq(variables['testType'], 'unit')
             inputs:
               summaryFileLocation: 'coverage/cobertura-coverage.xml'
               pathToSources: 'src/'
-              reportDirectory: 'coverage'
-              failIfCoverageEmpty: false
 
       - job: Build
         displayName: 'Build Application'
-        dependsOn:
-          - Lint
-          - Test
+        dependsOn: QualityChecks
         steps:
           - task: UseNode@1
             inputs:
-              version: '18.x'
-            displayName: 'Use Node.js 18.x'
+              version: $(nodeVersion)
 
           - task: Cache@2
-            displayName: 'Cache node_modules'
             inputs:
-              key: 'npm | "$(Agent.OS)" | package.json'
+              key: 'npm | "$(Agent.OS)" | package-lock.json'
               path: 'node_modules'
-              cacheHitVar: 'NPM_CACHE_RESTORED'
 
           - task: Cache@2
-            displayName: 'Cache Prisma Client'
             inputs:
-              key: 'prisma | "$(Agent.OS)" | prisma/schema.prisma'
-              path: 'node_modules/.prisma'
-              cacheHitVar: 'PRISMA_CACHE_RESTORED'
-
-          - task: Cache@2
-            displayName: 'Cache Next.js Build'
-            inputs:
-              key: 'nextjs | "$(Agent.OS)" | package-lock.json | next.config.mjs | $(Build.SourcesDirectory)/src/**'
-              restoreKeys: |
-                nextjs | "$(Agent.OS)" | package-lock.json | next.config.mjs
-                nextjs | "$(Agent.OS)" | package-lock.json
-                nextjs | "$(Agent.OS)"
+              key: 'nextjs | "$(Agent.OS)" | package-lock.json | $(Build.SourceVersion)'
               path: '.next/cache'
-              cacheHitVar: 'NEXTJS_CACHE_RESTORED'
-
-          - script: npm install
-            displayName: 'Install Dependencies'
-            condition: ne(variables.NPM_CACHE_RESTORED, 'true')
 
           - script: |
               echo "FINNHUB_API_KEY=d313k2hr01qnu2r0cfkgd313k2hr01qnu2r0cfl0" > .env
               echo 'DATABASE_URL="file:./prisma/omni.db"' >> .env
-            displayName: 'Set up Environment Variables'
 
           - script: npx prisma generate
-            displayName: 'Generate Prisma Client'
-            condition: ne(variables.PRISMA_CACHE_RESTORED, 'true')
-
-          - script: npx prisma db push
-            displayName: 'Set up Database Schema'
-
-          - script: mkdir -p .next/cache
-            displayName: 'Ensure Next.js Cache Directory Exists'
-
-          - script: |
-              echo "Next.js cache restored: $(NEXTJS_CACHE_RESTORED)"
-              ls -la .next/cache || echo "Cache directory is empty"
-            displayName: 'Display Cache Status'
 
           - script: npm run build
-            displayName: 'Build React App'
+            displayName: 'Build Application'
 
-          - task: CopyFiles@2
-            displayName: 'Copy Files to Artifact Staging Directory'
+          - task: PublishPipelineArtifact@1
             inputs:
-              SourceFolder: '$(System.DefaultWorkingDirectory)'
-              Contents: |
-                .next/**
-                !.next/cache/**
-                public/**
-                package.json
-                next.config.mjs
-                prisma/**
-                coverage/**
-                .env
-              TargetFolder: '$(Build.ArtifactStagingDirectory)'
+              targetPath: '$(System.DefaultWorkingDirectory)'
+              artifactName: 'WebApp'
+              publishLocation: 'pipeline'
 
-          - task: PublishBuildArtifacts@1
-            displayName: 'Publish Artifact: WebApp'
-            inputs:
-              PathtoPublish: '$(Build.ArtifactStagingDirectory)'
-              ArtifactName: 'WebApp'
-              publishLocation: 'Container'
-
-  # Deploy to Azure App Service
   - stage: Deploy
-    displayName: 'Deploy to Azure App Service'
+    displayName: 'Deploy to Production'
     dependsOn: CI
+    condition: eq(variables['Build.SourceBranch'], 'refs/heads/main')
     jobs:
-      - deployment: DeployWeb
-        displayName: 'Deploy Web App to Azure'
+      - deployment: Production
+        displayName: 'Deploy to Azure App Service'
         environment: 'production'
-        pool:
-          vmImage: ubuntu-latest
         strategy:
           runOnce:
             deploy:
               steps:
-                - download: current
-                  artifact: WebApp
                 - task: AzureWebApp@1
-                  displayName: 'Deploy to Azure Web App'
                   inputs:
                     azureSubscription: 'OmniTrade Connection'
                     appType: 'webAppLinux'
                     appName: 'OmniTrade'
-                    resourceGroupName: 'OmniTrade'
                     package: '$(Pipeline.Workspace)/WebApp'
                     runtimeStack: 'NODE|18-lts'

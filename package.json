@@ -5,16 +5,29 @@
   "scripts": {
     "dev": "next dev",
     "build": "next build",
-    "start": "next start",
+    "build:ci": "next build --no-lint",
+    "start": "node server.js",
+    "start:next": "next start -H 0.0.0.0",
+    "postinstall": "prisma generate",
     "lint": "eslint",
+    "lint:ci": "eslint --cache --cache-location .eslintcache",
     "test": "jest",
     "test:ci": "npm run test -- --watchAll=false --reporters=default --reporters=jest-junit",
-    "test:coverage": "jest --coverage --watchAll=false --reporters=default --reporters=jest-junit",
+    "test:coverage": "jest --coverage --watchAll=false --reporters=default --reporters=jest-junit --maxWorkers=2",
     "test:e2e": "playwright test",
-    "test:e2e:ci": "CI=true playwright test",
+    "test:e2e:ci": "CI=true playwright test --workers=1",
     "test:e2e:chromium": "playwright test --project=chromium",
     "test:e2e:ui": "playwright test --ui",
-    "test:e2e:headed": "playwright test --headed"
+    "test:e2e:headed": "playwright test --headed",
+    "db:generate": "prisma generate",
+    "db:generate:ci": "prisma generate --schema=prisma/schema.ci.prisma",
+    "db:push": "prisma db push",
+    "db:push:ci": "prisma db push --schema=prisma/schema.ci.prisma",
+    "db:migrate": "prisma migrate deploy",
+    "db:migrate:dev": "prisma migrate dev",
+    "db:reset": "prisma migrate reset --force",
+    "db:seed": "node prisma/seed.js",
+    "db:test": "node scripts/test-db-connection.js"
   },
   "dependencies": {
     "@prisma/client": "^6.16.3",
@@ -22,6 +35,7 @@
     "bcrypt": "^6.0.0",
     "bcryptjs": "^3.0.2",
     "date-fns": "^4.1.0",
+    "dotenv": "^17.2.3",
     "file-saver": "^2.0.5",
     "jest": "^30.1.1",
     "lucide-react": "^0.542.0",
@@ -54,6 +68,9 @@
     "jest-junit": "^16.0.0",
     "prisma": "^6.16.3",
     "tailwindcss": "^4"
+  },
+  "engines": {
+    "node": ">=20.0.0"
   },
   "jest-junit": {
     "outputDirectory": "test-results",

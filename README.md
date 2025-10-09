@@ -48,6 +48,11 @@ Automated Jest unit tests and Playwright end2end tets run during the pipeline, y
   npm run test:e2e
 ```
 
+## Design Patterns
+For how OmniTrade implements RESTful resource design and supporting patterns (layered architecture, Prisma singleton, repositories/services, cache-aside, retry/backoff, facade, and strategy for alerts), see:
+
+- docs/design-patterns.md — includes Mermaid diagrams of the architecture, request sequence, class relationships, and trade state.
+
 ## Authors
  - [Kaigagi](https://github.com/Kaigagi)
  - [Savya-Rai](https://github.com/Savya-Rai)

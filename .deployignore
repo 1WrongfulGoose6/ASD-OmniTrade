@@ -1,0 +1,51 @@
+# Azure deployment ignore file
+# Exclude unnecessary files from deployment to reduce artifact size
+
+# Development files
+.git/
+.github/
+.idea/
+.vscode/
+
+# Test files
+tests/
+test-results/
+coverage/
+playwright-report/
+**/*.test.js
+**/*.spec.js
+
+# Documentation
+docs/
+README.md
+*.md
+
+# Development dependencies (install only production deps on server)
+# Note: node_modules are reinstalled on the server with --only=production
+
+# CI/CD files
+azure-pipelines.yml
+.azure/
+
+# Environment files (created during deployment)
+.env.local
+.env.development
+.env.example
+
+# Build cache and temporary files
+.eslintcache
+junit.xml
+
+# Scripts not needed in production
+scripts/
+
+# Source files (not needed, we have .next build output)
+# Commented out - some server components might need source
+# src/
+
+# Configuration files for development only
+jest.config.js
+jest.setup.js
+playwright.config.js
+babel.config.jest.js
+eslint.config.mjs

@@ -158,9 +158,5 @@ stages:
                     package: '$(Pipeline.Workspace)/WebApp'
                     runtimeStack: 'NODE|20-lts'
                     startUpCommand: 'npm start'
-                    appSettings: |
-                      -NODE_ENV production
-                      -PORT 8080
-                      -DATABASE_URL "postgresql://$(AZURE_POSTGRESQL_USER):$(AZURE_POSTGRESQL_PASSWORD)@$(AZURE_POSTGRESQL_HOST):$(AZURE_POSTGRESQL_PORT)/$(AZURE_POSTGRESQL_DATABASE)?sslmode=require"
-                      -FINNHUB_API_KEY "$(FINNHUB_API_KEY)"
+                    appSettings: '-NODE_ENV production -PORT 8080 -DATABASE_URL "postgresql://$(AZURE_POSTGRESQL_USER):$(AZURE_POSTGRESQL_PASSWORD)@$(AZURE_POSTGRESQL_HOST):$(AZURE_POSTGRESQL_PORT)/$(AZURE_POSTGRESQL_DATABASE)?sslmode=require" -FINNHUB_API_KEY "$(FINNHUB_API_KEY)"'
                   displayName: 'Deploy to Azure App Service'

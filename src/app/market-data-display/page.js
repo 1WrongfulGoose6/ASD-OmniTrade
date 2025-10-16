@@ -1,8 +1,7 @@
 // app/market-data-display/page.js
 "use client";
 
-import React from "react";
-import { useState, useEffect } from "react";
+import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
 import { useRouter } from "next/navigation";
@@ -13,23 +12,19 @@ import WaveBackground from "@/components/WaveBackground";
 export default function MarketListPage() {
     const router = useRouter();
 
-    // State to hold the fetched and filtered data
     const [coins, setCoins] = useState([]);
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState(null);
-    const [searchTerm, setSearchTerm] = useState('');
+    const [searchTerm, setSearchTerm] = useState("");
+    const [warning, setWarning] = useState(""); // 🟡 New state for warnings
 
     useEffect(() => {
-        // Asynchronous function to fetch data from the API route
         const fetchMarketData = async () => {
             try {
-                // Fetch from your internal API endpoint
-                const response = await fetch('/api/marketdata');
-
+                const response = await fetch("/api/marketdata");
                 if (!response.ok) {
                     throw new Error(`HTTP error! status: ${response.status}`);
                 }
-
                 const data = await response.json();
                 setCoins(data);
             } catch (e) {
@@ -39,39 +34,50 @@ export default function MarketListPage() {
                 setIsLoading(false);
             }
         };
-
         fetchMarketData();
-    }, []); // Empty dependency array ensures this effect runs only once on mount
+    }, []);
 
-    // Function to filter coins based on the search term
-    const filteredCoins = coins.filter(coin =>
-        coin.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        coin.symbol.toLowerCase().includes(searchTerm.toLowerCase())
+    const filteredCoins = coins.filter(
+        (coin) =>
+            coin.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+            coin.symbol.toLowerCase().includes(searchTerm.toLowerCase())
     );
 
+    // 🧠 Watch search term for warnings
+    useEffect(() => {
+        if (/\d/.test(searchTerm)) {
+            setWarning("⚠️ Numbers are not allowed in the search.");
+        } else if (searchTerm.length > 6) {
+            setWarning("⚠️ Search term too long — please enter up to 6 letters.");
+        } else if (searchTerm && filteredCoins.length === 0) {
+            setWarning("⚠️ No matching results found.");
+        } else {
+            setWarning("");
+        }
+    }, [searchTerm, filteredCoins]);
+
     function ViewDetail(symbol) {
-        router.push("/market-data-display/detail/"+symbol);
+        router.push("/market-data-display/detail/" + symbol);
     }
 
-  return (
-    <main className="relative min-h-screen overflow-hidden bg-gradient-to-br from-blue-600 to-blue-400 text-white">
-      <WaveBackground />
-      <NavBar />
+    return (
+        <main className="relative min-h-screen overflow-hidden bg-gradient-to-br from-blue-600 to-blue-400 text-white">
+            <WaveBackground />
+            <NavBar />
 
-      {/* content */}
-      <section className="relative z-10 mx-auto w-full max-w-6xl px-6 pt-6 pb-16">
-        {/* subheader */}
-        <div className="flex items-center justify-between rounded-2xl bg-white/15 ring-1 ring-white/20 backdrop-blur-md px-4 sm:px-6 py-3">
-          <Link href="/" className="flex items-center gap-2 hover:opacity-90">
-            <ArrowLeft className="h-5 w-5" />
-            <span className="font-medium">Back</span>
-          </Link>
-          <h1 className="text-2xl font-semibold">Market Data</h1>
-          <div className="w-14" />
-        </div>
+            <section className="relative z-10 mx-auto w-full max-w-6xl px-6 pt-6 pb-16">
+                {/* subheader */}
+                <div className="flex items-center justify-between rounded-2xl bg-white/15 ring-1 ring-white/20 backdrop-blur-md px-4 sm:px-6 py-3">
+                    <Link href="/" className="flex items-center gap-2 hover:opacity-90">
+                        <ArrowLeft className="h-5 w-5" />
+                        <span className="font-medium">Back</span>
+                    </Link>
+                    <h1 className="text-2xl font-semibold">Market Data</h1>
+                    <div className="w-14" />
+                </div>
 
                 {/* Search Bar */}
-                <div className="mb-6 flex justify-center">
+                <div className="mb-2 flex justify-center">
                     <input
                         type="text"
                         placeholder="Search stock..."
@@ -80,8 +86,16 @@ export default function MarketListPage() {
                         onChange={(e) => setSearchTerm(e.target.value)}
                     />
                 </div>
+
+                {/* 🟡 Warning Message */}
+                {warning && (
+                    <p className="text-center text-yellow-200 font-medium mb-4 animate-pulse">
+                        {warning}
+                    </p>
+                )}
+
                 {isLoading ? (
-                    <div className="text-center py-8 text-gray-500">
+                    <div className="text-center py-8 text-gray-200">
                         <p>Loading market data...</p>
                     </div>
                 ) : error ? (
@@ -108,9 +122,14 @@ export default function MarketListPage() {
                                     <tr
                                         key={coin.id}
                                         className="cursor-pointer transition hover:bg-gray-100/70"
-                                        onClick={()=>{ViewDetail(coin.symbol)}}
+                                        onClick={() => {
+                                            ViewDetail(coin.symbol);
+                                        }}
                                     >
-                                        <td className="px-4 py-3" onClick={(e)=>e.stopPropagation()}>
+                                        <td
+                                            className="px-4 py-3"
+                                            onClick={(e) => e.stopPropagation()}
+                                        >
                                             <WatchStar symbol={coin.symbol} name={coin.name} />
                                         </td>
                                         <td className="px-4 py-3 font-semibold text-gray-900">
@@ -121,17 +140,27 @@ export default function MarketListPage() {
                                                 {coin.name}
                                             </div>
                                         </td>
-                                        <td className="px-4 py-3 text-gray-600">{coin.symbol}</td>
-                                        <td className="px-4 py-3 text-right text-gray-900">{coin.price}</td>
+                                        <td className="px-4 py-3 text-gray-600">
+                                            {coin.symbol}
+                                        </td>
+                                        <td className="px-4 py-3 text-right text-gray-900">
+                                            {coin.price}
+                                        </td>
                                         <td
                                             className={`px-4 py-3 text-right font-medium ${
-                                                coin.change.startsWith("+") ? "text-emerald-600" : "text-red-600"
+                                                coin.change.startsWith("+")
+                                                    ? "text-emerald-600"
+                                                    : "text-red-600"
                                             }`}
                                         >
                                             {coin.change}
                                         </td>
-                                        <td className="px-4 py-3 text-right text-gray-600">{coin.marketCap}</td>
-                                        <td className="px-4 py-3 text-right text-gray-600">{coin.volume}</td>
+                                        <td className="px-4 py-3 text-right text-gray-600">
+                                            {coin.marketCap}
+                                        </td>
+                                        <td className="px-4 py-3 text-right text-gray-600">
+                                            {coin.volume}
+                                        </td>
                                     </tr>
                                 ))}
                                 </tbody>
@@ -139,7 +168,7 @@ export default function MarketListPage() {
                         </div>
                     </div>
                 )}
-      </section>
-    </main>
-  );
+            </section>
+        </main>
+    );
 }

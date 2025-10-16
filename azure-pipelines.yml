@@ -10,8 +10,7 @@ pool:
 
 variables:
   nodeVersion: '20.x'
-  # Performance optimizations
-  HUSKY: '0'  # Disable Husky hooks in CI
+  HUSKY: '0'
   CI: 'true'
   NODE_OPTIONS: '--max-old-space-size=4096'  # Increase Node.js memory limit
   
@@ -48,19 +47,13 @@ stages:
               summaryFileLocation: 'coverage/cobertura-coverage.xml'
               pathToSources: 'src/'
 
-      # E2E tests only on main branch or when explicitly requested
+      # playwright tests only on main branch or when explicitly requested
 
       - job: E2ETests
         displayName: 'E2E Tests'
         condition: or(eq(variables['Build.SourceBranch'], 'refs/heads/main'), eq(variables['FORCE_E2E'], 'true'))
         steps:
           - template: .azure/templates/setup-node.yml
-          - task: Cache@2
-            displayName: 'Cache Playwright browsers'
-            continueOnError: true
-            inputs:
-              key: 'playwright | "$(Agent.OS)" | package-lock.json'
-              path: '$(Agent.HomeDirectory)/.cache/ms-playwright'
           - script: npx playwright install --with-deps chromium
             displayName: 'Install Playwright browsers'
           - script: npm run test:e2e:ci

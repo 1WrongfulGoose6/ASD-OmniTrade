@@ -1,7 +1,6 @@
 "use client";
-import React, { useEffect } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import WaveBackground from "./WaveBackground";
+import { useEffect } from 'react';
 
 export default function ConfirmationForm() {
   const router = useRouter();

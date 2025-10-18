@@ -1,13 +1,8 @@
 // src/app/market-data-display/detail/[stockSymbol]/components/mainSection.js
 "use client";
 
-import { ArrowLeft } from "lucide-react";
-import React, { useState, useEffect } from "react";
-import Link from "next/link";
-import GraphSection from "./graphSection";
-import AlertsPanel from "@/components/AlertsPanel";
-import PropTypes from "prop-types";
-import WatchStar from "@/components/WatchStar";
+import { useState, useEffect } from 'react';
+import PropTypes from 'prop-types';
 
 export default function MainSection({ stockSymbol }) {
   const [stockData, setStockData] = useState(null);

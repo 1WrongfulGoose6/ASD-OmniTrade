@@ -1,10 +1,7 @@
 // src/app/deposit/page.js
 "use client";
-import React, { useState } from "react";
+import { useState } from "react";
 import { useRouter } from "next/navigation";
-import NavBar from "@/components/NavBar";
-import WaveBackground from "@/components/WaveBackground";
-import Image from "next/image";
 
 // Helper to get a cookie value by name
 function getCookie(name) {

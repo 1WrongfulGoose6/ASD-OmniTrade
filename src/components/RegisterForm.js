@@ -1,8 +1,6 @@
 "use client";
-import React, { useState } from "react";
+import { useState } from "react";
 import { useRouter } from "next/navigation";
-import WaveBackground from "./WaveBackground";
-import NavBar from "./NavBar";
 
 export default function RegisterForm() {
   const [name, setName] = useState("");

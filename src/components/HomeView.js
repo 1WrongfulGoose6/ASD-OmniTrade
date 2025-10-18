@@ -2,10 +2,9 @@
 'use client';
 
 import React from 'react';
-import Link from 'next/link';
-import NavBar from '@/components/NavBar';
 import PropTypes from 'prop-types';
 import WaveBackground from '@/components/WaveBackground';
+import Link from 'next/link';
 
 function funGreeting(nameLike) {
   if (!nameLike) return "Welcome to OmniTrade";

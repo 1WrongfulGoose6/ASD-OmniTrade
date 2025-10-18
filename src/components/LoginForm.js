@@ -1,8 +1,6 @@
 "use client";
-import React, { useState } from "react";
 import { useRouter } from "next/navigation";
-import NavBar from "@/components/NavBar";
-import WaveBackground from "@/components/WaveBackground";
+import { useState } from "react";
 
 export default function LoginForm() {
   const [email, setEmail] = useState("");

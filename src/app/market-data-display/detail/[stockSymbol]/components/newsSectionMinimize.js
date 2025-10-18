@@ -1,9 +1,7 @@
 // src/app/market-data-display/detail/[stockSymbol]/components/newsSectionMinimize.js
 'use client'
 
-import React from "react";
-import {useRightPanel} from "@/app/market-data-display/detail/[stockSymbol]/hooks/useRightPanel";
-import {ChevronDown} from "lucide-react"; // icon for minimize
+import { useRightPanel } from '../../hooks/useRightPanel';
 
 export default function NewsSectionMinimize() {
     const {setShowRight} = useRightPanel();

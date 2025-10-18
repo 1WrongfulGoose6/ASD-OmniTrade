@@ -1,14 +1,8 @@
 'use client';
 
-import React, { useState, useEffect, useRef } from 'react';
-import NavBar from '@/components/NavBar';
-import { ArrowLeft, Calendar } from 'lucide-react';
-import Link from 'next/link';
+import { useState, useEffect, useRef } from 'react';
 import { format } from 'date-fns';
-import { DayPicker } from 'react-day-picker';
-import 'react-day-picker/dist/style.css';
-import WaveBackground from '@/components/WaveBackground';
-import fetchTradeBacklog from '@/app/trade-backlog/lib/fetchTradeBacklog';
+import { fetchTradeBacklog } from './lib/fetchTradeBacklog';
 
 // ---- helpers ----
 function fmtDateSafe(value) {

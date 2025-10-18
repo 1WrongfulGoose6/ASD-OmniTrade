@@ -2,7 +2,6 @@
 'use client';
 
 import React from 'react';
-import { Bookmark, BookmarkCheck } from 'lucide-react';
 import PropTypes from 'prop-types';
 import { read as readStore, write as writeStore, getUid } from '@/lib/bookmarksStore';
 

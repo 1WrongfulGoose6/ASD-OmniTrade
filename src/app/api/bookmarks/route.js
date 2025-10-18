@@ -8,7 +8,7 @@ export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 // GET /api/bookmarks  -> list current user's bookmarks
-export async function GET(request) {
+export async function GET() {
   try {
     const userId = await requireUserId();
 

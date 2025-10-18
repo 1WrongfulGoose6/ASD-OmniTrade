@@ -1,7 +1,6 @@
 'use client';
 
 import React from 'react';
-import BookmarkButton from '@/components/BookmarkButton';
 import PropTypes from 'prop-types';
 
 const STORAGE_KEY = 'omni.bookmarks.v1';

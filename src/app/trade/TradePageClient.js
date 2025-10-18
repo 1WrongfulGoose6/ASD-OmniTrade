@@ -1,12 +1,8 @@
 // src/app/trade/TradePageClient.js
 "use client";
 
-import React, { useState, useEffect } from "react";
+import { useState, useEffect } from "react";
 import { useSearchParams } from "next/navigation";
-import NavBar from "@/components/NavBar";
-import WaveBackground from "@/components/WaveBackground";
-import GraphSection from "@/app/market-data-display/detail/[stockSymbol]/components/graphSection";
-import OrderForm from "@/components/OrderForm";
 
 // "$517.95" -> 517.95 (number) | invalid -> null
 function toNum(v) {
@@ -78,7 +74,7 @@ export default function TradePageClient() {
     return () => {
       off = true;
     };
-  }, [symbol]);
+  }, [symbol, name]);
 
   if (!symbol) return null;
 

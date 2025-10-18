@@ -54,7 +54,6 @@ export async function GET() {
 
     // Generate 30 days of historical data leading up to the current value
     const dailyValues = [];
-    const today = new Date();
     
     for (let i = 0; i < 30; i++) {
       const date = new Date();

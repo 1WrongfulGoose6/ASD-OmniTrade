@@ -21,7 +21,7 @@ export default function AlertsPanel({ symbol }) {
   const [operator, setOperator] = React.useState(">=");
   const [threshold, setThreshold] = React.useState("");
 
-  async function load() {
+  const load = React.useCallback(async function load() {
     setLoading(true); setErr(null);
     try {
       const res = await fetch(`/api/alerts?symbol=${encodeURIComponent(symbol)}`, { cache: "no-store" });
@@ -34,9 +34,9 @@ export default function AlertsPanel({ symbol }) {
     } finally {
       setLoading(false);
     }
-  }
+  }, [symbol]);
 
-  React.useEffect(() => { load(); /* on mount/symbol change */ }, [symbol]);
+  React.useEffect(() => { load(); /* on mount/symbol change */ }, [load]);
 
   async function createAlert(e) {
     e?.preventDefault();

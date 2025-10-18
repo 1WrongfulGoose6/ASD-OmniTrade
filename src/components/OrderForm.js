@@ -1,7 +1,7 @@
 // src/components/OrderForm.js
 "use client";
 
-import React, { useState } from "react";
+import { useState } from "react";
 import PropTypes from "prop-types";
 
 // Helper to get a cookie value by name

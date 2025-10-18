@@ -35,7 +35,7 @@ export async function POST(req) {
   }
 }
 
-export async function GET(req) {
+export async function GET() {
   try {
     const userId = await requireUserId();
 

@@ -1,10 +1,8 @@
-import React from 'react';
 import { render, screen } from '@testing-library/react';
-import HomeView from '../components/HomeView';
+import HomeView from '@/components/HomeView';
 
 // Mock NavBar with a named component (has a displayName)
 jest.mock('@/components/NavBar', () => {
-  const React = require('react');
   const MockNavBar = () => <nav data-testid="navbar" />;
   MockNavBar.displayName = 'MockNavBar';
   return { __esModule: true, default: MockNavBar };

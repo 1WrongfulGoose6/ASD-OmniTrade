@@ -1,10 +1,9 @@
 // src/app/market-data-display/detail/[stockSymbol]/components/newsSection.js
 "use client";
 
-import React, { useEffect, useState } from "react";
-import { useRightPanel } from "../hooks/useRightPanel"; // ✅ relative path
-import { ChevronRight } from "lucide-react";
-import PropTypes from "prop-types";
+import { useState, useEffect } from 'react';
+import PropTypes from 'prop-types';
+import { useRightPanel } from '../../hooks/useRightPanel';
 
 export default function NewsSection({ symbol = "AAPL" }) {
   const { setShowRight } = useRightPanel();

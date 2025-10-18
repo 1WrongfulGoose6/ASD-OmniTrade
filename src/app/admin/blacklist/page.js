@@ -1,7 +1,6 @@
 'use client';
 
 import React from 'react';
-import NavBar from '@/components/NavBar';
 import { useRouter } from 'next/navigation';
 
 // Helper to get a cookie value by name

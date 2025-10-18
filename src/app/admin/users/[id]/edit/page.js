@@ -2,7 +2,6 @@
 
 import React, { useEffect, useState } from 'react';
 import PropTypes from 'prop-types';
-import NavBar from '@/components/NavBar';
 import { useRouter } from 'next/navigation';
 
 // Helper to get a cookie value by name

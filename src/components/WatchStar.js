@@ -5,6 +5,13 @@ import React from 'react';
 import PropTypes from 'prop-types';
 import { Star } from 'lucide-react';
 
+// Helper to get a cookie value by name
+function getCookie(name) {
+  const value = `; ${document.cookie}`;
+  const parts = value.split(`; ${name}=`);
+  if (parts.length === 2) return parts.pop().split(';').shift();
+}
+
 async function fetchWatchlist() {
   const res = await fetch('/api/watchlist', { cache: 'no-store' });
   if (!res.ok) return [];
@@ -35,7 +42,10 @@ export default function WatchStar({ symbol, name }) {
     try {
       const res = await fetch('/api/watchlist/toggle', {
         method: 'POST',
-        headers: { 'content-type': 'application/json' },
+        headers: {
+          'content-type': 'application/json',
+          'X-CSRF-Token': getCookie('csrf-token'),
+        },
         body: JSON.stringify({ symbol: sym, name }),
       });
       if (!res.ok) setWatched(v => !v); // revert on failure

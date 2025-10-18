@@ -6,6 +6,13 @@ import { Bookmark, BookmarkCheck } from 'lucide-react';
 import PropTypes from 'prop-types';
 import { read as readStore, write as writeStore, getUid } from '@/lib/bookmarksStore';
 
+// Helper to get a cookie value by name
+function getCookie(name) {
+  const value = `; ${document.cookie}`;
+  const parts = value.split(`; ${name}=`);
+  if (parts.length === 2) return parts.pop().split(';').shift();
+}
+
 export default function BookmarkButton({ item, onChange }) {
   const [saved, setSaved] = React.useState(false);
   const [uid, setUid] = React.useState(null);
@@ -23,6 +30,7 @@ export default function BookmarkButton({ item, onChange }) {
 
   const toggle = async () => {
     const list = readStore(uid);
+    const csrfToken = getCookie("csrf-token");
 
     if (saved) {
       // optimistic remove
@@ -32,7 +40,7 @@ export default function BookmarkButton({ item, onChange }) {
       try {
         const u = new URL('/api/bookmarks', window.location.origin);
         u.searchParams.set('articleId', String(item.id));
-        await fetch(u, { method: 'DELETE' });
+        await fetch(u, { method: 'DELETE', headers: { 'X-CSRF-Token': csrfToken } });
       } catch (err) {
         console.error('Failed to delete bookmark:', err);
       }
@@ -51,7 +59,7 @@ export default function BookmarkButton({ item, onChange }) {
       try {
         await fetch('/api/bookmarks', {
           method: 'POST',
-          headers: { 'content-type': 'application/json' },
+          headers: { 'content-type': 'application/json', 'X-CSRF-Token': csrfToken },
           body: JSON.stringify({
             articleId: String(item.id),
             title: item.headline,

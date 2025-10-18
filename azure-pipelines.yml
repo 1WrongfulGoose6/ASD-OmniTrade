@@ -13,7 +13,7 @@ variables:
   HUSKY: '0'
   CI: 'true'
   NODE_OPTIONS: '--max-old-space-size=4096'  # Increase Node.js memory limit
-  
+
 stages:
   - stage: CI
     displayName: 'Continuous Integration'
@@ -27,6 +27,13 @@ stages:
             env:
               NEXT_TELEMETRY_DISABLED: 1
 
+      - job: SecurityAudit
+        displayName: 'Security Audit'
+        steps:
+          - template: .azure/templates/setup-node.yml
+          - script: npm audit --omit=dev
+            displayName: 'Run npm audit for production dependencies'
+
       - job: UnitTests
         displayName: 'Unit Tests'
         steps:
@@ -34,21 +41,23 @@ stages:
           - script: npm run test:coverage
             displayName: 'Run Unit Tests with Coverage'
             env:
-              CI: true
+              CI: 'true'
               NEXT_TELEMETRY_DISABLED: 1
           - task: PublishTestResults@2
             condition: succeededOrFailed()
             inputs:
               testResultsFormat: 'JUnit'
               testResultsFiles: 'test-results/**/*.xml'
-          - task: PublishCodeCoverageResults@2
+              failTaskOnFailedTests: true
+          - task: PublishCodeCoverageResults@2   # <-- fixed casing
             condition: succeededOrFailed()
             inputs:
+              codeCoverageTool: 'Cobertura'
               summaryFileLocation: 'coverage/cobertura-coverage.xml'
               pathToSources: 'src/'
+              reportDirectory: 'coverage/'
 
-      # playwright tests only on main branch or when explicitly requested
-
+      # Playwright E2E on main or when explicitly forced
       - job: E2ETests
         displayName: 'E2E Tests'
         condition: or(eq(variables['Build.SourceBranch'], 'refs/heads/main'), eq(variables['FORCE_E2E'], 'true'))
@@ -59,27 +68,32 @@ stages:
           - script: npm run test:e2e:ci
             displayName: 'Run E2E Tests'
             env:
-              CI: true
+              CI: 'true'
               NEXT_TELEMETRY_DISABLED: 1
           - task: PublishTestResults@2
             condition: succeededOrFailed()
             inputs:
               testResultsFormat: 'JUnit'
               testResultsFiles: 'test-results/**/*.xml'
+              failTaskOnFailedTests: true
 
       - job: Build
         displayName: 'Build Application'
-        dependsOn: [Lint, UnitTests]
+        dependsOn:
+          - Lint
+          - UnitTests
+          - SecurityAudit
         steps:
           - template: .azure/templates/setup-node.yml
           - task: Cache@2
             displayName: 'Cache Next.js build'
             continueOnError: true
             inputs:
-              key: 'nextjs | "$(Agent.OS)" | package-lock.json | $(Build.SourceVersion)'
+              key: 'nextjs | "$(Agent.OS)" | package-lock.json'
               path: '.next/cache'
               restoreKeys: |
-                nextjs | "$(Agent.OS)" | package-lock.json
+                nextjs | "$(Agent.OS)"
+                nextjs
           - script: npm run build:ci
             displayName: 'Build Application'
             env:
@@ -87,8 +101,8 @@ stages:
           - task: PublishPipelineArtifact@1
             condition: eq(variables['Build.SourceBranch'], 'refs/heads/main')
             inputs:
-              targetPath: '$(System.DefaultWorkingDirectory)'
-              artifactName: 'WebApp'
+              path: '$(System.DefaultWorkingDirectory)'
+              artifact: 'WebApp'
               publishLocation: 'pipeline'
             displayName: 'Publish build artifacts'
 
@@ -107,28 +121,30 @@ stages:
                 - download: current
                   artifact: WebApp
                   displayName: 'Download build artifacts'
-                
+
                 # Install dependencies and run database migrations
                 - task: UseNode@1
-                  inputs:
-                    version: $(nodeVersion)
                   displayName: 'Use Node.js for deployment'
-                
+                  inputs:
+                    versionSpec: '$(nodeVersion)'      # <-- fixed input name
+
                 - script: |
                     cd $(Pipeline.Workspace)/WebApp
                     npm ci --only=production
                   displayName: 'Install production dependencies'
-                
 
                 - script: |
                     cd $(Pipeline.Workspace)/WebApp
                     echo "Configuring database connection..."
-                    echo "DATABASE_URL=postgresql://$AZURE_POSTGRESQL_USER:$AZURE_POSTGRESQL_PASSWORD@$AZURE_POSTGRESQL_HOST:$AZURE_POSTGRESQL_PORT/$AZURE_POSTGRESQL_DATABASE?sslmode=require" > .env
-                    echo "NODE_ENV=production" >> .env
-                    echo "PORT=8080" >> .env
-                    echo "HOSTNAME=0.0.0.0" >> .env
-                    echo "FINNHUB_API_KEY=$FINNHUB_API_KEY" >> .env
+                    {
+                      echo "DATABASE_URL=postgresql://$AZURE_POSTGRESQL_USER:$AZURE_POSTGRESQL_PASSWORD@$AZURE_POSTGRESQL_HOST:$AZURE_POSTGRESQL_PORT/$AZURE_POSTGRESQL_DATABASE?sslmode=require"
+                      echo "NODE_ENV=production"
+                      echo "PORT=8080"
+                      echo "HOSTNAME=0.0.0.0"
+                      echo "FINNHUB_API_KEY=$FINNHUB_API_KEY"
+                    } > .env
                     echo "Database configuration complete"
+                    # NOTE: consider NOT deleting migrations in production (see notes below)
                     echo "Clearing existing migrations for provider switch..."
                     rm -rf prisma/migrations
                     npx prisma generate
@@ -142,8 +158,9 @@ stages:
                     AZURE_POSTGRESQL_DATABASE: $(AZURE_POSTGRESQL_DATABASE)
                     AZURE_POSTGRESQL_PORT: $(AZURE_POSTGRESQL_PORT)
                     FINNHUB_API_KEY: $(FINNHUB_API_KEY)
-                
+
                 - task: AzureWebApp@1
+                  displayName: 'Deploy to Azure App Service'
                   inputs:
                     azureSubscription: 'OmniTrade Connection'
                     appType: 'webAppLinux'
@@ -151,5 +168,8 @@ stages:
                     package: '$(Pipeline.Workspace)/WebApp'
                     runtimeStack: 'NODE|20-lts'
                     startUpCommand: 'npm start'
-                    appSettings: '-NODE_ENV production -PORT 8080 -DATABASE_URL "postgresql://$(AZURE_POSTGRESQL_USER):$(AZURE_POSTGRESQL_PASSWORD)@$(AZURE_POSTGRESQL_HOST):$(AZURE_POSTGRESQL_PORT)/$(AZURE_POSTGRESQL_DATABASE)?sslmode=require" -FINNHUB_API_KEY "$(FINNHUB_API_KEY)"'
-                  displayName: 'Deploy to Azure App Service'
+                    appSettings: |
+                      -NODE_ENV production
+                      -PORT 8080
+                      -DATABASE_URL "postgresql://$(AZURE_POSTGRESQL_USER):$(AZURE_POSTGRESQL_PASSWORD)@$(AZURE_POSTGRESQL_HOST):$(AZURE_POSTGRESQL_PORT)/$(AZURE_POSTGRESQL_DATABASE)?sslmode=require"
+                      -FINNHUB_API_KEY "$(FINNHUB_API_KEY)"

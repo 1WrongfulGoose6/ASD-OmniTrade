@@ -4,6 +4,13 @@
 import React, { useState } from "react";
 import PropTypes from "prop-types";
 
+// Helper to get a cookie value by name
+function getCookie(name) {
+  const value = `; ${document.cookie}`;
+  const parts = value.split(`; ${name}=`);
+  if (parts.length === 2) return parts.pop().split(';').shift();
+}
+
 function toNum(v) {
   if (typeof v === "number") return Number.isFinite(v) ? v : null;
   if (v == null) return null;
@@ -45,7 +52,10 @@ export default function OrderForm({ symbol, price }) {
     try {
       const res = await fetch("/api/trades", {
         method: "POST",
-        headers: { "content-type": "application/json" },
+        headers: {
+          "content-type": "application/json",
+          "X-CSRF-Token": getCookie("csrf-token"),
+        },
         body: JSON.stringify({
           symbol,
           side: side.toUpperCase(),  // BUY/SELL

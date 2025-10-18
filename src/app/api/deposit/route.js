@@ -1,16 +1,16 @@
+// src/app/api/deposit/route.js
 import { NextResponse } from "next/server";
 import { prisma } from "@/utils/prisma";
-import { getUserIdFromCookies } from "@/utils/auth";
+import { requireUserId, verifyCsrf } from "@/utils/auth";
+import logger from "@/utils/logger";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 export async function POST(req) {
   try {
-    const userId = await getUserIdFromCookies();
-    if (!userId) {
-      return NextResponse.json({ error: "unauthorized" }, { status: 401 });
-    }
+    await verifyCsrf(req.headers);
+    const userId = await requireUserId();
 
     const body = await req.json();
     const amount = parseFloat(body.amount);
@@ -27,14 +27,17 @@ export async function POST(req) {
 
     return NextResponse.json(deposit);
   } catch (err) {
-    return NextResponse.json({ error: err.message }, { status: 500 });
+    logger.error({ err }, "[deposit POST] error");
+    if (err.message.includes("csrf") || err.message.includes("unauthorized")) {
+      return NextResponse.json({ error: "unauthorized" }, { status: 401 });
+    }
+    return NextResponse.json({ error: "internal_error" }, { status: 500 });
   }
 }
 
-export async function GET() {
+export async function GET(req) {
   try {
-    const userId = await getUserIdFromCookies();
-    if (!userId) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
+    const userId = await requireUserId();
 
     const items = await prisma.deposit.findMany({
       where: { userId },
@@ -42,11 +45,12 @@ export async function GET() {
       take: 50,
     });
 
-    console.log("Deposits found:", items);
-
     return NextResponse.json({ deposits: items }, { status: 200 });
   } catch (e) {
-    console.error("[deposits GET] error", e);
+    logger.error({ err: e }, "[deposits GET] error");
+    if (e.message.includes("unauthorized")) {
+      return NextResponse.json({ error: "unauthorized" }, { status: 401 });
+    }
     return NextResponse.json({ error: "internal_error" }, { status: 500 });
   }
 }

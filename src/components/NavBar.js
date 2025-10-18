@@ -5,6 +5,13 @@ import React from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 
+// Helper to get a cookie value by name
+function getCookie(name) {
+  const value = `; ${document.cookie}`;
+  const parts = value.split(`; ${name}=`);
+  if (parts.length === 2) return parts.pop().split(';').shift();
+}
+
 export default function NavBar() {
   const router = useRouter();
   const [loggedIn, setLoggedIn] = React.useState(false);
@@ -42,7 +49,12 @@ export default function NavBar() {
   }, []);
 
   const logout = async () => {
-    try { await fetch("/api/auth/logout", { method: "POST" }); } catch {console.log("Error")}
+    try {
+      await fetch("/api/auth/logout", {
+        method: "POST",
+        headers: { 'X-CSRF-Token': getCookie("csrf-token") },
+      });
+    } catch {console.log("Error")}
     // tell everyone auth changed, then refresh any server bits
     window.dispatchEvent(new Event("auth:changed"));
     router.refresh();

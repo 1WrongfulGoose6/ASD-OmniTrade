@@ -6,6 +6,13 @@ import NavBar from "@/components/NavBar";
 import WaveBackground from "@/components/WaveBackground";
 import Image from "next/image";
 
+// Helper to get a cookie value by name
+function getCookie(name) {
+  const value = `; ${document.cookie}`;
+  const parts = value.split(`; ${name}=`);
+  if (parts.length === 2) return parts.pop().split(';').shift();
+}
+
 export default function WithdrawPage() {
   const [amount, setAmount] = useState("");
   const [cardNumber, setCardNumber] = useState("");
@@ -68,7 +75,10 @@ export default function WithdrawPage() {
     try {
       const res = await fetch("/api/withdraw", {
         method: "POST",
-        headers: { "content-type": "application/json" },
+        headers: {
+          "content-type": "application/json",
+          "X-CSRF-Token": getCookie("csrf-token"),
+        },
         body: JSON.stringify({ amount: Number(amount) }),
       });
 

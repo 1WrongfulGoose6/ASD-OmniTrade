@@ -5,6 +5,13 @@ import NavBar from '@/components/NavBar';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 
+// Helper to get a cookie value by name
+function getCookie(name) {
+  const value = `; ${document.cookie}`;
+  const parts = value.split(`; ${name}=`);
+  if (parts.length === 2) return parts.pop().split(';').shift();
+}
+
 export default function ManageUsersPage() {
   //hold user list
   const [users, setUsers] = React.useState([]);
@@ -106,7 +113,10 @@ export default function ManageUsersPage() {
                             <button
                             onClick={async () => {
                                 if (!confirm('Delete user?')) return;
-                                const res = await fetch(`/api/admin/users/${user.id}`, { method: 'DELETE' });
+                                const res = await fetch(`/api/admin/users/${user.id}`, {
+                                  method: 'DELETE',
+                                  headers: { 'X-CSRF-Token': getCookie('csrf-token') },
+                                });
                                 if (!res.ok) return alert('Delete failed');
                                 setUsers(u => u.filter(x => x.id !== user.id));
                             }}
@@ -121,7 +131,10 @@ export default function ManageUsersPage() {
                             onClick={async () => {
                                 const res = await fetch(`/api/admin/users/${user.id}`, {
                                 method: 'PATCH',
-                                headers: { 'Content-Type': 'application/json' },
+                                headers: {
+                                  'Content-Type': 'application/json',
+                                  'X-CSRF-Token': getCookie('csrf-token'),
+                                },
                                 body: JSON.stringify({ blacklisted: true }),
                                 });
                                 if (!res.ok) return alert('Failed to blacklist');

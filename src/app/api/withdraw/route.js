@@ -1,17 +1,16 @@
 // src/app/api/withdraw/route.js
 import { NextResponse } from "next/server";
 import { prisma } from "@/utils/prisma";
-import { getUserIdFromCookies } from "@/utils/auth";
+import { requireUserId, verifyCsrf } from "@/utils/auth";
+import logger from "@/utils/logger";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 export async function POST(req) {
   try {
-    const userId = await getUserIdFromCookies();
-    if (!userId) {
-      return NextResponse.json({ error: "unauthorized" }, { status: 401 });
-    }
+    await verifyCsrf(req.headers);
+    const userId = await requireUserId();
 
     const body = await req.json();
     let amount = parseFloat(body.amount);
@@ -46,15 +45,17 @@ export async function POST(req) {
 
     return NextResponse.json(withdrawalRecord);
   } catch (err) {
-    console.error("[withdraw POST] error", err);
-    return NextResponse.json({ error: err.message }, { status: 500 });
+    logger.error({ err }, "[withdraw POST] error");
+    if (err.message.includes("csrf") || err.message.includes("unauthorized")) {
+      return NextResponse.json({ error: "unauthorized" }, { status: 401 });
+    }
+    return NextResponse.json({ error: "internal_error" }, { status: 500 });
   }
 }
 
 export async function GET() {
   try {
-    const userId = await getUserIdFromCookies();
-    if (!userId) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
+    const userId = await requireUserId();
 
     // Fetch only negative amounts to show withdrawals
     const items = await prisma.deposit.findMany({
@@ -63,11 +64,12 @@ export async function GET() {
       take: 50,
     });
 
-    console.log("Withdrawals found:", items);
-
     return NextResponse.json({ withdrawals: items }, { status: 200 });
   } catch (e) {
-    console.error("[withdraw GET] error", e);
+    logger.error({ err: e }, "[withdraw GET] error");
+    if (e.message.includes("unauthorized")) {
+      return NextResponse.json({ error: "unauthorized" }, { status: 401 });
+    }
     return NextResponse.json({ error: "internal_error" }, { status: 500 });
   }
 }

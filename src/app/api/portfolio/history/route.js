@@ -2,16 +2,16 @@
 
 import { NextResponse } from "next/server";
 import { prisma } from "@/utils/prisma";
-import { getUserIdFromCookies } from "@/utils/auth";
+import { requireUserId } from "@/utils/auth";
+import logger from "@/utils/logger";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 export async function GET() {
-  const userId = await getUserIdFromCookies();
-  if (!userId) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
-
   try {
+    const userId = await requireUserId();
+
     // Calculate current portfolio value using the same logic as the main portfolio API
     // 1) Get holdings from trades
     const trades = await prisma.trade.findMany({
@@ -93,7 +93,10 @@ export async function GET() {
     });
 
   } catch (e) {
-    console.error("[portfolio/history] error", e);
+    logger.error({ err: e }, "[portfolio/history] error");
+    if (e.message.includes("unauthorized")) {
+      return NextResponse.json({ error: "unauthorized" }, { status: 401 });
+    }
     return NextResponse.json({ error: "internal_error" }, { status: 500 });
   }
 }

@@ -4,6 +4,13 @@ import React from 'react';
 import NavBar from '@/components/NavBar';
 import { useRouter } from 'next/navigation';
 
+// Helper to get a cookie value by name
+function getCookie(name) {
+  const value = `; ${document.cookie}`;
+  const parts = value.split(`; ${name}=`);
+  if (parts.length === 2) return parts.pop().split(';').shift();
+}
+
 export default function BlacklistPage() {
   // state for user list, loading, and errors
   const [users, setUsers] = React.useState([]);
@@ -97,7 +104,10 @@ export default function BlacklistPage() {
                           onClick={async () => {
                             const res = await fetch(`/api/admin/users/${user.id}`, {
                               method: 'PATCH',
-                              headers: { 'Content-Type': 'application/json' },
+                              headers: {
+                                'Content-Type': 'application/json',
+                                'X-CSRF-Token': getCookie('csrf-token'),
+                              },
                               body: JSON.stringify({ blacklisted: false }),
                             });
                             if (!res.ok) return alert('Failed to remove from blacklist');

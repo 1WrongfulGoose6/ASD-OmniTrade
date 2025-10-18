@@ -1,43 +1,44 @@
 // src/app/api/admin/users/[id]/route.js
 import { NextResponse } from 'next/server';
 import { prisma } from '@/utils/prisma';
-import bcrypt from 'bcryptjs';
-import { getUserIdFromCookies } from '@/utils/auth';
+import { requireUserId, verifyCsrf } from '@/utils/auth';
+import { encrypt, decrypt } from '@/utils/encryption';
+import logger from '@/utils/logger';
 
-async function requireAdmin() {
-  const id = await getUserIdFromCookies();
-  if (!id) return { error: 'not authenticated', code: 401 };
-  // Simplified 
-  return { ok: true, id };
-}
+// TODO: All handlers in this file need a real admin authorization check.
 
 // GET one user by id
 export async function GET(req, { params }) {
   try {
-    const auth = await requireAdmin();
-    if (!auth.ok) return NextResponse.json({ error: auth.error }, { status: auth.code });
-
+    await requireUserId();
     const id = parseInt(params.id, 10);
+
     const user = await prisma.user.findUnique({
       where: { id },
-      select: { id: true, name: true, email: true, createdAt: true }
+      select: { id: true, name: true, email: true, createdAt: true, blacklisted: true },
     });
+
     if (!user) return NextResponse.json({ error: 'not found' }, { status: 404 });
-    return NextResponse.json({ user });
+
+    const responseUser = { ...user, name: user.name ? decrypt(user.name) : null };
+    return NextResponse.json({ user: responseUser });
   } catch (e) {
-    return NextResponse.json({ error: e.message }, { status: 500 });
+    logger.error({ err: e }, "[admin/users/:id GET] error");
+    if (e.message.includes("unauthorized")) {
+      return NextResponse.json({ error: "unauthorized" }, { status: 401 });
+    }
+    return NextResponse.json({ error: "internal_error" }, { status: 500 });
   }
 }
 
 // UPDATE user by id
 export async function PUT(req, { params }) {
   try {
-    const auth = await requireAdmin();
-    if (!auth.ok) return NextResponse.json({ error: auth.error }, { status: auth.code });
-
+    await verifyCsrf(req.headers);
+    await requireUserId();
     const id = parseInt(params.id, 10);
     const body = await req.json();
-    const { name, email, password } = body;
+    const { name, email } = body;
 
     if (!name || !email) {
       return NextResponse.json({ error: 'name and email required' }, { status: 400 });
@@ -48,7 +49,7 @@ export async function PUT(req, { params }) {
       return NextResponse.json({ error: 'email already used' }, { status: 409 });
     }
 
-    const data = { name, email };
+    const data = { name: encrypt(name), email };
 
     const updated = await prisma.user.update({
       where: { id },
@@ -56,32 +57,40 @@ export async function PUT(req, { params }) {
       select: { id: true, name: true, email: true },
     });
 
-    return NextResponse.json({ user: updated });
+    const responseUser = { ...updated, name: updated.name ? decrypt(updated.name) : null };
+    return NextResponse.json({ user: responseUser });
   } catch (e) {
-    return NextResponse.json({ error: e.message }, { status: 500 });
+    logger.error({ err: e }, "[admin/users/:id PUT] error");
+    if (e.message.includes("csrf") || e.message.includes("unauthorized")) {
+      return NextResponse.json({ error: "unauthorized" }, { status: 401 });
+    }
+    return NextResponse.json({ error: "internal_error" }, { status: 500 });
   }
 }
 
 // DELETE user by id
 export async function DELETE(req, { params }) {
   try {
-    const auth = await requireAdmin();
-    if (!auth.ok) return NextResponse.json({ error: auth.error }, { status: auth.code });
-
+    await verifyCsrf(req.headers);
+    await requireUserId();
     const id = parseInt(params.id, 10);
+
     await prisma.user.delete({ where: { id } });
     return NextResponse.json({ ok: true });
   } catch (e) {
-    return NextResponse.json({ error: e.message }, { status: 500 });
+    logger.error({ err: e }, "[admin/users/:id DELETE] error");
+    if (e.message.includes("csrf") || e.message.includes("unauthorized")) {
+      return NextResponse.json({ error: "unauthorized" }, { status: 401 });
+    }
+    return NextResponse.json({ error: "internal_error" }, { status: 500 });
   }
 }
 
 // BLACKLIST user
 export async function PATCH(req, { params }) {
   try {
-    const auth = await requireAdmin();
-    if (!auth.ok) return NextResponse.json({ error: auth.error }, { status: auth.code });
-
+    await verifyCsrf(req.headers);
+    await requireUserId();
     const id = parseInt(params.id, 10);
     const body = await req.json();
     const { blacklisted } = body;
@@ -92,8 +101,13 @@ export async function PATCH(req, { params }) {
       select: { id: true, name: true, email: true, blacklisted: true, createdAt: true },
     });
 
-    return NextResponse.json({ user: updated });
+    const responseUser = { ...updated, name: updated.name ? decrypt(updated.name) : null };
+    return NextResponse.json({ user: responseUser });
   } catch (e) {
-    return NextResponse.json({ error: e.message }, { status: 500 });
+    logger.error({ err: e }, "[admin/users/:id PATCH] error");
+    if (e.message.includes("csrf") || e.message.includes("unauthorized")) {
+      return NextResponse.json({ error: "unauthorized" }, { status: 401 });
+    }
+    return NextResponse.json({ error: "internal_error" }, { status: 500 });
   }
 }

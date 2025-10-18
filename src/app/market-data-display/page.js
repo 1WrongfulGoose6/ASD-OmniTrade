@@ -1,13 +1,8 @@
 // app/market-data-display/page.js
 "use client";
 
-import React, { useState, useEffect } from "react";
-import Link from "next/link";
-import { ArrowLeft } from "lucide-react";
+import { useState, useEffect } from 'react';
 import { useRouter } from "next/navigation";
-import NavBar from "@/components/NavBar";
-import WatchStar from "@/components/WatchStar";
-import WaveBackground from "@/components/WaveBackground";
 
 export default function MarketListPage() {
     const router = useRouter();

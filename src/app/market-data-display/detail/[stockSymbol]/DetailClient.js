@@ -1,12 +1,8 @@
 // src/app/market-data-display/detail/[stockSymbol]/DetailClient.js
 "use client";
 
-import React from "react";
-import PropTypes from "prop-types";
 import { useRightPanel } from "./hooks/useRightPanel";
-import MainSection from "./components/mainSection";
-import NewsSection from "./components/newsSection";
-import NewsSectionMinimize from "./components/newsSectionMinimize";
+import PropTypes from "prop-types";
 
 export default function DetailClient({ stockSymbol }) {
   const { showRight } = useRightPanel();

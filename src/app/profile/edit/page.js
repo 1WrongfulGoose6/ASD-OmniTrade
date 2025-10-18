@@ -1,8 +1,14 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
-import NavBar from '@/components/NavBar';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+
+// Helper to get a cookie value by name
+function getCookie(name) {
+  const value = `; ${document.cookie}`;
+  const parts = value.split(`; ${name}=`);
+  if (parts.length === 2) return parts.pop().split(';').shift();
+}
 
 export default function EditProfilePage() {
   const [loading, setLoading] = useState(true);
@@ -79,7 +85,10 @@ export default function EditProfilePage() {
 
       const res = await fetch('/api/auth/me', {
         method: 'PUT',
-        headers: { 'content-type': 'application/json' },
+        headers: {
+          'content-type': 'application/json',
+          'X-CSRF-Token': getCookie('csrf-token'),
+        },
         body: JSON.stringify(payload),
       });
       const json = await res.json();

@@ -1,9 +1,9 @@
 // src/components/PortfolioChart.js
 "use client";
 
-import React, { useState, useEffect } from "react";
+import { useState, useEffect } from "react";
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid, Label } from "recharts";
-import PropTypes from "prop-types";
+
 
 export default function PortfolioChart() {
   const [chartData, setChartData] = useState([]);
@@ -177,5 +177,3 @@ export default function PortfolioChart() {
     </div>
   );
 }
-
-PortfolioChart.propTypes = {};

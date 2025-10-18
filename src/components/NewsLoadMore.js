@@ -1,7 +1,7 @@
 // src/components/NewsLoadMore.js
 'use client';
 
-import React, { useMemo, useState, useEffect, useCallback } from 'react';
+import { useMemo, useState, useEffect, useCallback } from 'react';
 import BookmarkButton from './BookmarkButton';
 import PropTypes from 'prop-types';
 import { read as readStore, isBookmarkKey, getUid } from '@/lib/bookmarksStore';
@@ -37,7 +37,7 @@ export default function NewsLoadMore({ items = [], initialCount = 8, step = 6 })
 
   const baseList = Array.isArray(items) ? items : [];
   const source = mode === 'bookmarked' ? bookmarks : baseList;
-  const safeSource = Array.isArray(source) ? source : [];
+  const safeSource = useMemo(() => Array.isArray(source) ? source : [], [source]);
   const shown = useMemo(() => safeSource.slice(0, visible), [safeSource, visible]);
 
   return (

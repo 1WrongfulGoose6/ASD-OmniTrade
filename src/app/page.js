@@ -1,6 +1,4 @@
 // app/page.js
-import React from "react";
-import HomeView from "@/components/HomeView";
 import { headers } from "next/headers";
 
 export const dynamic = "force-dynamic"; // ← disables SSG for this route

@@ -2,8 +2,14 @@
 
 import React, { useEffect, useState } from 'react';
 import PropTypes from 'prop-types';
-import NavBar from '@/components/NavBar';
 import { useRouter } from 'next/navigation';
+
+// Helper to get a cookie value by name
+function getCookie(name) {
+  const value = `; ${document.cookie}`;
+  const parts = value.split(`; ${name}=`);
+  if (parts.length === 2) return parts.pop().split(';').shift();
+}
 
 export default function AdminEditUserPage({ params }) {
 // get user id from url
@@ -68,7 +74,10 @@ export default function AdminEditUserPage({ params }) {
 
       const res = await fetch(`/api/admin/users/${userId}`, {
         method: 'PUT',
-        headers: { 'content-type': 'application/json' },
+        headers: {
+          'content-type': 'application/json',
+          'X-CSRF-Token': getCookie('csrf-token'),
+        },
         body: JSON.stringify(payload),
       });
       const json = await res.json();

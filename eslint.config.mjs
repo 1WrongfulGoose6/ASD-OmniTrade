@@ -6,7 +6,7 @@ import { defineConfig } from "eslint/config";
 
 export default defineConfig([
   { ignores: ["node_modules/**", ".next/**", "public/**", "build/**", "dist/**", "test-results/**", "coverage/**", ".*/**"] },
-  { files: ["**/*.{js,mjs,cjs,jsx}"], plugins: { js }, extends: ["js/recommended"], languageOptions: { globals: {...globals.browser, ...globals.node} }, rules: { "no-unused-vars": "off" } },
+  { files: ["**/*.{js,mjs,cjs,jsx}"], plugins: { js }, extends: ["js/recommended"], languageOptions: { globals: {...globals.browser, ...globals.node} }, rules: { "no-unused-vars": ["warn", { "varsIgnorePattern": "^[A-Z].*$", "argsIgnorePattern": "^_" }] } },
   {
     files: ["**/*.{js,jsx}"],
     ...pluginReact.configs.flat.recommended,
@@ -19,7 +19,7 @@ export default defineConfig([
       "react/react-in-jsx-scope": "off",
       "react/prop-types": "off",
       "react-hooks/rules-of-hooks": "error",
-      "react-hooks/exhaustive-deps": "off"
+      "react-hooks/exhaustive-deps": "warn"
     }
   },
 

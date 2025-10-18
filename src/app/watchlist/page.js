@@ -2,11 +2,7 @@
 'use client';
 
 import React from 'react';
-import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import NavBar from '@/components/NavBar';
-import WatchStar from '@/components/WatchStar';
-import WaveBackground from '@/components/WaveBackground';
 
 export default function WatchlistPage() {
   const router = useRouter();

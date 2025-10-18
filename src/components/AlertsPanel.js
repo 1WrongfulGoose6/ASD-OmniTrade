@@ -6,6 +6,13 @@ import PropTypes from "prop-types";
 
 const OPS = [">", "<", ">=", "<=", "=="];
 
+// Helper to get a cookie value by name
+function getCookie(name) {
+  const value = `; ${document.cookie}`;
+  const parts = value.split(`; ${name}=`);
+  if (parts.length === 2) return parts.pop().split(';').shift();
+}
+
 export default function AlertsPanel({ symbol }) {
   const [items, setItems] = React.useState([]);
   const [loading, setLoading] = React.useState(true);
@@ -14,7 +21,7 @@ export default function AlertsPanel({ symbol }) {
   const [operator, setOperator] = React.useState(">=");
   const [threshold, setThreshold] = React.useState("");
 
-  async function load() {
+  const load = React.useCallback(async function load() {
     setLoading(true); setErr(null);
     try {
       const res = await fetch(`/api/alerts?symbol=${encodeURIComponent(symbol)}`, { cache: "no-store" });
@@ -27,9 +34,9 @@ export default function AlertsPanel({ symbol }) {
     } finally {
       setLoading(false);
     }
-  }
+  }, [symbol]);
 
-  React.useEffect(() => { load(); /* on mount/symbol change */ }, [symbol]);
+  React.useEffect(() => { load(); /* on mount/symbol change */ }, [load]);
 
   async function createAlert(e) {
     e?.preventDefault();
@@ -38,7 +45,10 @@ export default function AlertsPanel({ symbol }) {
     try {
       const res = await fetch("/api/alerts", {
         method: "POST",
-        headers: { "content-type": "application/json" },
+        headers: {
+          "content-type": "application/json",
+          "X-CSRF-Token": getCookie("csrf-token"),
+        },
         body: JSON.stringify({ symbol, operator, threshold: n }),
       });
       const data = await res.json().catch(() => ({}));
@@ -53,7 +63,12 @@ export default function AlertsPanel({ symbol }) {
   async function removeAlert(id) {
     if (!confirm("Delete this alert?")) return;
     try {
-      const res = await fetch(`/api/alerts/${id}`, { method: "DELETE" });
+      const res = await fetch(`/api/alerts/${id}`, {
+        method: "DELETE",
+        headers: {
+          "X-CSRF-Token": getCookie("csrf-token"),
+        },
+      });
       const data = await res.json().catch(() => ({}));
       if (!res.ok) throw new Error(data.error || `Failed ${res.status}`);
       setItems((prev) => prev.filter((a) => a.id !== id));

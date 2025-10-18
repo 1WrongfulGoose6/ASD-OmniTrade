@@ -1,6 +1,6 @@
-import React from "react";
-import PropTypes from "prop-types";
-import { Geist, Geist_Mono } from "next/font/google";
+import { Geist } from 'geist/font/sans';
+import { GeistMono } from 'geist/font/mono';
+import PropTypes from 'prop-types';
 import "./globals.css";
 
 const geistSans = Geist({
@@ -8,7 +8,7 @@ const geistSans = Geist({
   subsets: ["latin"],
 });
 
-const geistMono = Geist_Mono({
+const geistMono = GeistMono({
   variable: "--font-geist-mono",
   subsets: ["latin"],
 });

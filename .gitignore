@@ -11,7 +11,7 @@ prisma/test.db-journal
 
 # Env files
 .env
-.env
+.env.local
 !.env.example
 
 # --- Next.js build cache ---

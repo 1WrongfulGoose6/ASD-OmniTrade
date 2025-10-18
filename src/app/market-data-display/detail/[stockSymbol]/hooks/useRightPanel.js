@@ -1,8 +1,8 @@
 // src/app/market-data-display/detail/[stockSymbol]/hooks/useRightPanel.js
 'use client'
 
-import React,{ createContext, useContext, useState, useCallback } from "react";
-import PropTypes from "prop-types";
+import { createContext, useContext, useState, useCallback } from 'react';
+import PropTypes from 'prop-types';
 
 // 1. Create Context
 const RightPanelContext = createContext();

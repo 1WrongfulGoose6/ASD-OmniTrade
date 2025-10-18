@@ -1,8 +1,6 @@
 'use client';
 
 import React from 'react';
-import NavBar from '@/components/NavBar';
-import Link from 'next/link';
 
 export default function ProfilePage() {
     // user info state

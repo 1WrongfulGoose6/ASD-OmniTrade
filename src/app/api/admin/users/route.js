@@ -1,29 +1,36 @@
+// src/app/api/admin/users/route.js
 import { NextResponse } from 'next/server';
 import { prisma } from '@/utils/prisma';
-import { getUserIdFromCookies } from '@/utils/auth';
+import { requireUserId } from '@/utils/auth';
+import { decrypt } from '@/utils/encryption';
+import logger from '@/utils/logger';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 
-// TEMP: just allow any logged-in user
-async function requireAdmin() {
-  const id = await getUserIdFromCookies();
-  if (!id) return { error: 'not authenticated', code: 401 };
-  return { ok: true, id };
-}
-
+// GET /api/admin/users - list all users
 export async function GET() {
   try {
-    const auth = await requireAdmin();
-    if (!auth.ok) return NextResponse.json({ error: auth.error }, { status: auth.code });
+    // TODO: This needs a real admin check. Currently allows any logged-in user.
+    await requireUserId();
 
     const users = await prisma.user.findMany({
-      select: { id: true, name: true, email: true, createdAt: true, blacklisted: true, },
+      select: { id: true, name: true, email: true, createdAt: true, blacklisted: true },
       orderBy: { id: 'asc' },
     });
 
-    return NextResponse.json({ users });
+    // Decrypt user names before sending
+    const decryptedUsers = users.map(user => ({
+      ...user,
+      name: user.name ? decrypt(user.name) : null,
+    }));
+
+    return NextResponse.json({ users: decryptedUsers });
   } catch (e) {
-    return NextResponse.json({ error: e.message || 'server error' }, { status: 500 });
+    logger.error({ err: e }, "[admin/users GET] error");
+    if (e.message.includes("unauthorized")) {
+      return NextResponse.json({ error: "unauthorized" }, { status: 401 });
+    }
+    return NextResponse.json({ error: "internal_error" }, { status: 500 });
   }
 }

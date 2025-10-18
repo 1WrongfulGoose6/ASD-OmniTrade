@@ -1,11 +1,7 @@
 // src/components/Portfolio.js
 "use client";
 
-import React, { useEffect, useState } from "react";
-import Link from "next/link";
-import NavBar from "@/components/NavBar";
-import WaveBackground from "@/components/WaveBackground";
-import PortfolioChart from "@/components/PortfolioChart";
+import { useState, useEffect } from "react";
 
 export default function Portfolio() {
   const [range, setRange] = useState("24h");

@@ -1,4 +1,10 @@
 -- CreateEnum
+CREATE TYPE "UserRole" AS ENUM ('USER', 'ADMIN');
+
+-- CreateEnum
+CREATE TYPE "CashEntryType" AS ENUM ('DEPOSIT', 'WITHDRAW');
+
+-- CreateEnum
 CREATE TYPE "Side" AS ENUM ('BUY', 'SELL');
 
 -- CreateTable
@@ -9,6 +15,7 @@ CREATE TABLE "User" (
     "passwordHash" TEXT NOT NULL,
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "blacklisted" BOOLEAN NOT NULL DEFAULT false,
+    "role" "UserRole" NOT NULL DEFAULT 'USER',
 
     CONSTRAINT "User_pkey" PRIMARY KEY ("id")
 );
@@ -80,6 +87,7 @@ CREATE TABLE "Deposit" (
     "id" SERIAL NOT NULL,
     "userId" INTEGER NOT NULL,
     "amount" DOUBLE PRECISION NOT NULL,
+    "kind" "CashEntryType" NOT NULL DEFAULT 'DEPOSIT',
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
 
     CONSTRAINT "Deposit_pkey" PRIMARY KEY ("id")

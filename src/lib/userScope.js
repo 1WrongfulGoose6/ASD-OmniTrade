@@ -11,7 +11,8 @@ export async function getUserId() {
         const res = await fetch("/api/auth/me", { cache: "no-store" });
         if (!res.ok) throw new Error("auth");
         const j = await res.json();
-        cachedUserId = Number.isFinite(j?.id) ? j.id : null;
+        const userId = j?.user?.id;
+        cachedUserId = Number.isFinite(userId) ? userId : null;
       } catch {
         cachedUserId = null;
       }

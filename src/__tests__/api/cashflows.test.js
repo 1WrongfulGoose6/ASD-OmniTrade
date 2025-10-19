@@ -2,9 +2,12 @@ jest.mock('@/utils/prisma', () => ({
   prisma: {
     deposit: {
       create: jest.fn(),
-      aggregate: jest.fn(),
     },
   },
+}));
+
+jest.mock('@/lib/server/portfolio', () => ({
+  getCashBalance: jest.fn(),
 }));
 
 jest.mock('@/utils/auth', () => ({
@@ -13,6 +16,7 @@ jest.mock('@/utils/auth', () => ({
 
 const { prisma } = require('@/utils/prisma');
 const { getUserIdFromCookies } = require('@/utils/auth');
+const { getCashBalance } = require('@/lib/server/portfolio');
 const { POST: depositPost } = require('@/app/api/deposit/route');
 const { POST: withdrawPost } = require('@/app/api/withdraw/route');
 const { createJsonRequest } = require('@/test-utils/request');
@@ -32,14 +36,14 @@ describe('Cash flow routes', () => {
     const res = await depositPost(req);
     expect(res.status).toBe(200);
     expect(prisma.deposit.create).toHaveBeenCalledWith({
-      data: { amount: 250, userId: 99 },
+      data: { amount: 250, kind: 'DEPOSIT', userId: 99 },
     });
     const json = await res.json();
     expect(json.amount).toBe(250);
   });
 
   it('prevents withdrawals that exceed balance (F05-API-WithdrawInsufficient)', async () => {
-    prisma.deposit.aggregate.mockResolvedValue({ _sum: { amount: 100 } });
+    getCashBalance.mockResolvedValue({ availableCash: 100 });
 
     const req = createJsonRequest('http://localhost/api/withdraw', { amount: 150 });
 
@@ -51,8 +55,8 @@ describe('Cash flow routes', () => {
   });
 
   it('records successful withdrawals as negative deposits (F05-API-WithdrawSuccess)', async () => {
-    prisma.deposit.aggregate.mockResolvedValue({ _sum: { amount: 500 } });
-    const record = { id: 10, amount: -200, createdAt: new Date().toISOString() };
+    getCashBalance.mockResolvedValue({ availableCash: 500 });
+    const record = { id: 10, amount: 200, kind: 'WITHDRAW', createdAt: new Date().toISOString() };
     prisma.deposit.create.mockResolvedValue(record);
 
     const req = createJsonRequest('http://localhost/api/withdraw', { amount: 200 });
@@ -60,7 +64,7 @@ describe('Cash flow routes', () => {
     const res = await withdrawPost(req);
     expect(res.status).toBe(200);
     expect(prisma.deposit.create).toHaveBeenCalledWith({
-      data: { amount: -200, userId: 99 },
+      data: { amount: 200, kind: 'WITHDRAW', userId: 99 },
     });
     const json = await res.json();
     expect(json.amount).toBe(-200);

@@ -21,10 +21,10 @@ describe('POST /api/auth/register', () => {
     jest.clearAllMocks();
   });
 
-  it('registers a new user and issues a uid cookie (F02-API-Register)', async () => {
+  it('registers a new user and issues a session cookie (F02-API-Register)', async () => {
     prisma.user.findUnique.mockResolvedValue(null);
     bcrypt.hash.mockResolvedValue('hashed-password');
-    const createdUser = { id: 1, name: null, email: 'new@example.com', createdAt: new Date().toISOString() };
+    const createdUser = { id: 1, name: null, email: 'new@example.com', createdAt: new Date().toISOString(), role: 'USER' };
     prisma.user.create.mockResolvedValue(createdUser);
 
     const req = createJsonRequest('http://localhost/api/auth/register', { email: 'new@example.com', password: 'Secret123!' });
@@ -37,12 +37,13 @@ describe('POST /api/auth/register', () => {
       data: expect.objectContaining({
         email: 'new@example.com',
         passwordHash: 'hashed-password',
+        role: 'USER',
       }),
-      select: { id: true, name: true, email: true, createdAt: true },
+      select: { id: true, name: true, email: true, createdAt: true, role: true },
     });
-    const uidCookie = res.cookies.get('uid');
-    expect(uidCookie).toBeDefined();
-    expect(uidCookie.value).toBe(String(createdUser.id));
+    const sessionCookie = res.cookies.get('omni_session');
+    expect(sessionCookie).toBeDefined();
+    expect(sessionCookie.value).toBeTruthy();
   });
 
   it('rejects duplicate registrations (F02-API-RegisterConflict)', async () => {

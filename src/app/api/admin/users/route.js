@@ -1,15 +1,15 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/utils/prisma';
-import { getUserIdFromCookies } from '@/utils/auth';
+import { getUserSession } from '@/utils/auth';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 
-// TEMP: just allow any logged-in user
 async function requireAdmin() {
-  const id = await getUserIdFromCookies();
-  if (!id) return { error: 'not authenticated', code: 401 };
-  return { ok: true, id };
+  const session = await getUserSession();
+  if (!session) return { error: 'not authenticated', code: 401 };
+  if (session.role !== 'ADMIN') return { error: 'forbidden', code: 403 };
+  return { ok: true, id: session.id };
 }
 
 export async function GET() {

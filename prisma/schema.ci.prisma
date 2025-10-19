@@ -10,13 +10,24 @@ generator client {
   provider = "prisma-client-js"
 }
 
+enum UserRole {
+  USER
+  ADMIN
+}
+
+enum CashEntryType {
+  DEPOSIT
+  WITHDRAW
+}
+
 model User {
-  id           Int      @id @default(autoincrement())
+  id           Int       @id @default(autoincrement())
   name         String?
-  email        String   @unique
+  email        String    @unique
   passwordHash String
-  createdAt    DateTime @default(now())
-  blacklisted  Boolean  @default(false)
+  createdAt    DateTime  @default(now())
+  blacklisted  Boolean   @default(false)
+  role         UserRole  @default(USER)
 
   // Relations
   trades        Trade[]
@@ -111,12 +122,13 @@ model TradeBacklog {
 }
 
 model Deposit {
-  id     Int  @id @default(autoincrement())
+  id     Int           @id @default(autoincrement())
   userId Int
-  user   User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user   User          @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   amount    Float
-  createdAt DateTime @default(now())
+  kind      CashEntryType @default(DEPOSIT)
+  createdAt DateTime    @default(now())
 
   @@index([userId])
 }

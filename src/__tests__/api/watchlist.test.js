@@ -10,21 +10,16 @@ jest.mock('@/utils/auth', () => ({
   getUserIdFromCookies: jest.fn(),
 }));
 
+jest.mock('@/lib/server/watchlist', () => ({
+  getWatchlistWithQuotes: jest.fn(),
+}));
+
 const { prisma } = require('@/utils/prisma');
 const { getUserIdFromCookies } = require('@/utils/auth');
+const { getWatchlistWithQuotes } = require('@/lib/server/watchlist');
 const { GET } = require('@/app/api/watchlist/route');
 
 describe('GET /api/watchlist', () => {
-  let originalFetch;
-
-  beforeAll(() => {
-    originalFetch = global.fetch;
-  });
-
-  afterAll(() => {
-    global.fetch = originalFetch;
-  });
-
   beforeEach(() => {
     jest.clearAllMocks();
   });
@@ -44,14 +39,10 @@ describe('GET /api/watchlist', () => {
       { symbol: 'msft' },
       { symbol: 'AAPL' },
     ]);
-    global.fetch = jest.fn().mockResolvedValue(
-      new Response(JSON.stringify([
-        { symbol: 'MSFT', price: 123, change: '+1%', name: 'Microsoft' },
-        { symbol: 'AAPL', price: 456, change: '-1%', name: 'Apple' },
-      ]), {
-        headers: { 'content-type': 'application/json' },
-      }),
-    );
+    getWatchlistWithQuotes.mockResolvedValue([
+      { symbol: 'MSFT', price: 123, change: '+1%', name: 'Microsoft' },
+      { symbol: 'AAPL', price: 456, change: '-1%', name: 'Apple' },
+    ]);
 
     const res = await GET();
     expect(res.status).toBe(200);
@@ -60,6 +51,6 @@ describe('GET /api/watchlist', () => {
     expect(json.items[0]).toEqual(
       expect.objectContaining({ symbol: 'MSFT', price: 123, name: 'Microsoft' }),
     );
-    expect(global.fetch).toHaveBeenCalled();
+    expect(getWatchlistWithQuotes).toHaveBeenCalledWith(12);
   });
 });

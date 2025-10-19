@@ -7,10 +7,11 @@ jest.mock('@/utils/prisma', () => ({
     tradeBacklog: {
       create: jest.fn(),
     },
-    deposit: {
-      aggregate: jest.fn(),
-    },
   },
+}));
+
+jest.mock('@/lib/server/portfolio', () => ({
+  getCashBalance: jest.fn(),
 }));
 
 jest.mock('@/utils/auth', () => ({
@@ -19,6 +20,7 @@ jest.mock('@/utils/auth', () => ({
 
 const { prisma } = require('@/utils/prisma');
 const { getUserIdFromCookies } = require('@/utils/auth');
+const { getCashBalance } = require('@/lib/server/portfolio');
 const { POST } = require('@/app/api/trades/route');
 const { createJsonRequest } = require('@/test-utils/request');
 
@@ -29,7 +31,7 @@ describe('POST /api/trades', () => {
   });
 
   it('allows a BUY trade when sufficient cash is available (F01-API-BuySuccess)', async () => {
-    prisma.deposit.aggregate.mockResolvedValue({ _sum: { amount: 1000 } });
+    getCashBalance.mockResolvedValue({ availableCash: 1000 });
     const createdTrade = {
       id: 1,
       userId: 42,
@@ -81,6 +83,7 @@ describe('POST /api/trades', () => {
       { side: 'BUY', qty: 1 },
       { side: 'SELL', qty: 1 },
     ]);
+    getCashBalance.mockResolvedValue({ availableCash: 0 });
 
     const req = createJsonRequest('http://localhost/api/trades', {
       symbol: 'TSLA',

@@ -1,8 +1,8 @@
 // F04 - Ali Bonagdaran
 
 import { NextResponse } from "next/server";
-import { prisma } from "@/utils/prisma";
 import { getUserIdFromCookies } from "@/utils/auth";
+import { buildPortfolioSnapshot } from "@/lib/server/portfolio";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -200,68 +200,18 @@ export async function GET(request) {
   if (!userId) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
 
   try {
-    // Calculate current portfolio value using the same logic as the main portfolio API
-    // 1) Get holdings from trades
-    const trades = await prisma.trade.findMany({
-      where: { userId },
-      orderBy: { createdAt: "asc" },
-      select: { symbol: true, side: true, qty: true, price: true, createdAt: true },
-    });
+    const snapshot = await buildPortfolioSnapshot(userId);
+    const currentPortfolioValue = snapshot.netWorth;
 
-    const map = new Map();
-    for (const t of trades) {
-      const key = t.symbol.toUpperCase();
-      const cur =
-        map.get(key) ||
-        {
-          symbol: key,
-          shares: 0,
-          costBasis: 0,
-          firstHeldAt: null,
-        };
-      const signedQty = t.side === "BUY" ? t.qty : -t.qty;
-      const previousShares = cur.shares;
-
-      if (signedQty > 0) {
-        const newShares = previousShares + signedQty;
-        const newCost =
-          (cur.costBasis * cur.shares + t.price * signedQty) / (newShares || 1);
-        cur.shares = newShares;
-        cur.costBasis = newShares > 0 ? newCost : 0;
-        if (previousShares <= 0 && newShares > 0) {
-          cur.firstHeldAt = t.createdAt;
-        }
-      } else {
-        cur.shares = cur.shares + signedQty;
-        if (cur.shares <= 0) {
-          cur.shares = 0;
-          cur.costBasis = 0;
-          cur.firstHeldAt = null;
-        }
-      }
-      map.set(key, cur);
-    }
-
-    const positions = [...map.values()].filter((p) => p.shares > 0);
-    const holdingsValue = positions.reduce((acc, p) => acc + p.costBasis * p.shares, 0);
-    const firstHoldingDate = positions.reduce((acc, p) => {
-      if (!p.firstHeldAt) return acc;
-      const ts = new Date(p.firstHeldAt).getTime();
-      if (Number.isNaN(ts)) return acc;
-      if (!acc) return new Date(ts);
-      return ts < acc.getTime() ? new Date(ts) : acc;
+    const firstHoldingDate = snapshot.holdings.reduce((earliest, holding) => {
+      if (!holding.firstHeldAt) return earliest;
+      const ts = new Date(holding.firstHeldAt).getTime();
+      if (Number.isNaN(ts)) return earliest;
+      if (!earliest) return new Date(ts);
+      return ts < earliest.getTime() ? new Date(ts) : earliest;
     }, null);
-    const hasActiveHoldings = positions.length > 0;
 
-    // 2) Get cash from deposits
-    const agg = await prisma.deposit.aggregate({
-      _sum: { amount: true },
-      where: { userId },
-    });
-    const cash = Number(agg._sum.amount || 0);
-
-    // 3) Total portfolio value (matching the Net Worth calculation)
-    const currentPortfolioValue = holdingsValue + cash;
+    const hasActiveHoldings = snapshot.holdings.length > 0;
 
     const rangeConfig = resolveRange(searchRange);
     const { data, startValue, change, changePercent, firstHoldingTimestamp } = calculateHistoricalSeries(

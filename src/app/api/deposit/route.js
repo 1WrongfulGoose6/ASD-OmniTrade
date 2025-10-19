@@ -21,6 +21,7 @@ export async function POST(req) {
     const deposit = await prisma.deposit.create({
       data: {
         amount,
+        kind: "DEPOSIT",
         userId,
       },
     });

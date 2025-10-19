@@ -1,7 +1,11 @@
-// src/app/api/auth/register/route.js
+// src/app/api/auth/login/route.js
 import { NextResponse } from "next/server";
 import bcrypt from "bcryptjs";
 import { prisma } from "@/utils/prisma";
+import {
+  applySessionCookie,
+  createSessionToken,
+} from "@/utils/auth";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -23,14 +27,10 @@ export async function POST(req) {
     const ok = await bcrypt.compare(String(password), user.passwordHash);
     if (!ok) return NextResponse.json({ error: "invalid credentials" }, { status: 401 });
 
-    const res = NextResponse.json({ ok: true, user: { id: user.id, email: user.email, name: user.name } });
-    res.cookies.set("uid", String(user.id), {
-      httpOnly: true,
-      sameSite: "lax",
-      secure: process.env.NODE_ENV === "production",
-      path: "/",
-      maxAge: 60 * 60 * 24 * 30,
-    });
+    const payload = { id: user.id, email: user.email, name: user.name, role: user.role };
+    const res = NextResponse.json({ ok: true, user: payload });
+    const token = createSessionToken(payload);
+    applySessionCookie(res, token);
     return res;
   } catch (e) {
     return NextResponse.json({ error: e.message || "server error" }, { status: 500 });

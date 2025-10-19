@@ -1,5 +1,5 @@
 import React from 'react';
-import { render, screen } from '@testing-library/react';
+import { render, screen, act } from '@testing-library/react';
 
 // Mock NavBar with a named component (has a displayName)
 jest.mock('@/components/NavBar', () => {
@@ -44,13 +44,44 @@ const sampleNews = [
   },
 ];
 
+const originalFetch = global.fetch;
+
+const mockResponse = (data, status = 200) => ({
+  ok: status >= 200 && status < 300,
+  status,
+  headers: new Headers({ 'content-type': 'application/json' }),
+  json: async () => data,
+});
+
+beforeEach(() => {
+  global.fetch = jest.fn(async (url) => {
+    if (url.includes('/api/auth/me')) return mockResponse({ user: null });
+    if (url.includes('/api/watchlist')) return mockResponse({ items: [] });
+    if (url.includes('/api/marketdata')) return mockResponse([]);
+    return mockResponse({});
+  });
+});
+
+afterEach(() => {
+  jest.clearAllMocks();
+});
+
+afterAll(() => {
+  global.fetch = originalFetch;
+});
+
 describe('HomeView', () => {
-  it('renders without crashing', () => {
-    render(<HomeView news={sampleNews} />);
+  it('renders without crashing', async () => {
+    await act(async () => {
+      render(<HomeView news={sampleNews} />);
+    });
+    expect(screen.getByTestId('navbar')).toBeInTheDocument();
   });
 
-  it('renders a "View Portfolio" link', () => {
-    render(<HomeView news={sampleNews} />);
+  it('renders a "View Portfolio" link', async () => {
+    await act(async () => {
+      render(<HomeView news={sampleNews} />);
+    });
     expect(
       screen.getByRole('link', { name: /View Portfolio/i })
     ).toBeInTheDocument();

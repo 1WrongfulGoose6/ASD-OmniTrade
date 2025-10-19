@@ -9,6 +9,7 @@ import { DayPicker } from 'react-day-picker';
 import 'react-day-picker/dist/style.css';
 import WaveBackground from '@/components/WaveBackground';
 import fetchTradeBacklog from '@/app/trade-backlog/lib/fetchTradeBacklog';
+import { convertToCSV, downloadCSV } from '@/app/trade-backlog/lib/csv';
 
 // ---- helpers ----
 function fmtDateSafe(value) {
@@ -29,36 +30,6 @@ const useOutsideClick = (ref, callback) => {
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, [ref, callback]);
-};
-
-const convertToCSV = (data) => {
-  if (!Array.isArray(data) || data.length === 0) return '';
-  const headers = Object.keys(data[0]);
-  const headerRow = headers.join(',');
-  const dataRows = data.map((row) =>
-      headers
-          .map((field) => {
-            let v = row[field];
-            if (typeof v === 'string' && (v.includes(',') || v.includes('\n') || v.includes('"'))) {
-              v = `"${v.replace(/"/g, '""')}"`;
-            }
-            return v;
-          })
-          .join(',')
-  );
-  return [headerRow, ...dataRows].join('\n');
-};
-
-const downloadCSV = (csvString, fileName) => {
-  const blob = new Blob([csvString], { type: 'text/csv;charset=utf-8;' });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement('a');
-  a.href = url;
-  a.setAttribute('download', `${fileName}.csv`);
-  document.body.appendChild(a);
-  a.click();
-  document.body.removeChild(a);
-  URL.revokeObjectURL(url);
 };
 
 // ---- page ----

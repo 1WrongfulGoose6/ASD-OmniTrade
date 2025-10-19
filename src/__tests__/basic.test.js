@@ -1,6 +1,5 @@
 import React from 'react';
 import { render, screen } from '@testing-library/react';
-import HomeView from '../components/HomeView';
 
 // Mock NavBar with a named component (has a displayName)
 jest.mock('@/components/NavBar', () => {
@@ -9,6 +8,8 @@ jest.mock('@/components/NavBar', () => {
   MockNavBar.displayName = 'MockNavBar';
   return { __esModule: true, default: MockNavBar };
 });
+
+const { default: HomeView } = require('../components/HomeView');
 
 // Mock watchlist helpers used by HomeView's useEffect
 // jest.mock('@/lib/watchlist', () => ({

@@ -2,6 +2,7 @@
 import { NextResponse } from "next/server";
 import { getUserIdFromCookies } from "@/utils/auth";
 import { buildPortfolioSnapshot } from "@/lib/server/portfolio";
+import { errorLog } from "@/utils/logger";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -30,7 +31,7 @@ export async function GET() {
       { status: 200 }
     );
   } catch (e) {
-    console.error("[portfolio] error", e);
+    errorLog("portfolio.snapshot.failed", e, { userId });
     return NextResponse.json({ error: "internal_error" }, { status: 500 });
   }
 }

@@ -5,6 +5,7 @@ import React from 'react';
 import { Bookmark, BookmarkCheck } from 'lucide-react';
 import PropTypes from 'prop-types';
 import { read as readStore, write as writeStore, getUid } from '@/lib/bookmarksStore';
+import { csrfFetch } from '@/lib/csrfClient';
 
 export default function BookmarkButton({ item, onChange }) {
   const [saved, setSaved] = React.useState(false);
@@ -32,7 +33,7 @@ export default function BookmarkButton({ item, onChange }) {
       try {
         const u = new URL('/api/bookmarks', window.location.origin);
         u.searchParams.set('articleId', String(item.id));
-        await fetch(u, { method: 'DELETE' });
+        await csrfFetch(u, { method: 'DELETE' });
       } catch (err) {
         console.error('Failed to delete bookmark:', err);
       }
@@ -49,7 +50,7 @@ export default function BookmarkButton({ item, onChange }) {
       writeStore(uid, [toSave, ...list].slice(0, 200));
       setSaved(true);
       try {
-        await fetch('/api/bookmarks', {
+        await csrfFetch('/api/bookmarks', {
           method: 'POST',
           headers: { 'content-type': 'application/json' },
           body: JSON.stringify({

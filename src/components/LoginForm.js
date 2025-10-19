@@ -1,24 +1,33 @@
 "use client";
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import NavBar from "@/components/NavBar";
 import WaveBackground from "@/components/WaveBackground";
+import { csrfFetch, getCsrfToken, setCachedCsrfToken } from "@/lib/csrfClient";
 
 export default function LoginForm() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const router = useRouter();
 
+  useEffect(() => {
+    getCsrfToken().catch(() => {
+      // handled on submit if needed
+    });
+  }, []);
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      const res = await fetch("/api/auth/login", {
+      const res = await csrfFetch("/api/auth/login", {
         method: "POST",
         headers: { "content-type": "application/json" },
         body: JSON.stringify({ email, password }),
       });
       const data = await res.json();
       if (!res.ok) return alert(data.error || "Login failed");
+      const newToken = res.headers.get("x-csrf-token");
+      setCachedCsrfToken(newToken);
       // session cookie is set by the server on success
       window.dispatchEvent(new Event("auth:changed"));
       router.push("/confirmation?msg=Login%20successful!");

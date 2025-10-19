@@ -3,6 +3,7 @@
 
 import React from "react";
 import PropTypes from "prop-types";
+import { csrfFetch } from "@/lib/csrfClient";
 
 const OPS = [">", "<", ">=", "<=", "=="];
 
@@ -36,7 +37,7 @@ export default function AlertsPanel({ symbol }) {
     const n = Number(threshold);
     if (!Number.isFinite(n)) return alert("Enter a numeric threshold");
     try {
-      const res = await fetch("/api/alerts", {
+      const res = await csrfFetch("/api/alerts", {
         method: "POST",
         headers: { "content-type": "application/json" },
         body: JSON.stringify({ symbol, operator, threshold: n }),
@@ -53,7 +54,7 @@ export default function AlertsPanel({ symbol }) {
   async function removeAlert(id) {
     if (!confirm("Delete this alert?")) return;
     try {
-      const res = await fetch(`/api/alerts/${id}`, { method: "DELETE" });
+      const res = await csrfFetch(`/api/alerts/${id}`, { method: "DELETE" });
       const data = await res.json().catch(() => ({}));
       if (!res.ok) throw new Error(data.error || `Failed ${res.status}`);
       setItems((prev) => prev.filter((a) => a.id !== id));

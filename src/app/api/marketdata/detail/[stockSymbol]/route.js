@@ -1,5 +1,6 @@
 // src/app/api/marketdata/detail/[stockSymbol]/route.js
 import { NextResponse } from "next/server";
+import { errorLog } from "@/utils/logger";
 
 const FINNHUB_API_URL = "https://finnhub.io/api/v1";
 const API_KEY = process.env.FINNHUB_API_KEY;
@@ -127,7 +128,7 @@ export async function GET(_req, { params }) {
     put(sym, payload); // save to cache
     return NextResponse.json(payload, { status: 200 });
   } catch (error) {
-    console.error("[marketdata/detail] error", error);
+    errorLog("marketdata.detail.failed", error);
     return NextResponse.json({ error: "Failed to fetch stock data" }, { status: 500 });
   }
 }

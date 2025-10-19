@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Menu, X } from "lucide-react";
 import { useAuth } from "@/components/providers/AuthProvider";
+import { csrfFetch, invalidateCsrfToken } from "@/lib/csrfClient";
 
 const navLinks = [
   { href: "/market-data-display", label: "Stocks" },
@@ -13,7 +14,6 @@ const navLinks = [
   { href: "/portfolio", label: "Portfolio" },
   { href: "/profile", label: "Profile" },
   { href: "/trade-backlog", label: "History" },
-  { href: "/settings", label: "Settings" },
 ];
 
 export default function NavBar() {
@@ -26,10 +26,11 @@ export default function NavBar() {
 
   const logout = async () => {
     try {
-      await fetch("/api/auth/logout", { method: "POST" });
+      await csrfFetch("/api/auth/logout", { method: "POST" });
     } catch {
       // swallow network errors, still clear client state
     }
+    invalidateCsrfToken();
     window.dispatchEvent(new Event("auth:changed"));
     refresh();
     router.refresh();
@@ -153,4 +154,3 @@ export default function NavBar() {
     </header>
   );
 }
-

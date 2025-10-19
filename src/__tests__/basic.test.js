@@ -1,4 +1,7 @@
+/* eslint-env jest */
+
 import React from 'react';
+import { afterAll, afterEach, beforeEach } from '@jest/globals';
 import { render, screen, act } from '@testing-library/react';
 
 // Mock NavBar with a named component (has a displayName)

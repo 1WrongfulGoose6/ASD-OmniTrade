@@ -4,6 +4,7 @@ import React, { useEffect, useState } from 'react';
 import PropTypes from 'prop-types';
 import NavBar from '@/components/NavBar';
 import { useRouter } from 'next/navigation';
+import { csrfFetch } from '@/lib/csrfClient';
 
 export default function AdminEditUserPage({ params }) {
 // get user id from url
@@ -66,7 +67,7 @@ export default function AdminEditUserPage({ params }) {
       const payload = { name, email };
       if (showPasswordField && newPassword) payload.password = newPassword;
 
-      const res = await fetch(`/api/admin/users/${userId}`, {
+      const res = await csrfFetch(`/api/admin/users/${userId}`, {
         method: 'PUT',
         headers: { 'content-type': 'application/json' },
         body: JSON.stringify(payload),

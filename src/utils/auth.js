@@ -3,7 +3,7 @@ import jwt from "jsonwebtoken";
 import { cookies, headers } from "next/headers";
 
 export const SESSION_COOKIE_NAME = "omni_session";
-const MAX_AGE_SECONDS = 60 * 60 * 24 * 30; // 30 days
+const MAX_AGE_SECONDS = 60 * 60 * 24; // 1 day
 
 function getAuthSecret() {
   const secret = process.env.AUTH_SECRET || process.env.JWT_SECRET_KEY;
@@ -38,7 +38,7 @@ export function verifySessionToken(token) {
 export function applySessionCookie(response, token) {
   response.cookies.set(SESSION_COOKIE_NAME, token, {
     httpOnly: true,
-    sameSite: "lax",
+    sameSite: "strict",
     secure: process.env.NODE_ENV === "production",
     path: "/",
     maxAge: MAX_AGE_SECONDS,
@@ -48,7 +48,7 @@ export function applySessionCookie(response, token) {
 export function clearSessionCookie(response) {
   response.cookies.set(SESSION_COOKIE_NAME, "", {
     httpOnly: true,
-    sameSite: "lax",
+    sameSite: "strict",
     secure: process.env.NODE_ENV === "production",
     path: "/",
     maxAge: 0,

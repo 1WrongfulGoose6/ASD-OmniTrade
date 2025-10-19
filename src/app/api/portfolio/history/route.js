@@ -3,6 +3,7 @@
 import { NextResponse } from "next/server";
 import { getUserIdFromCookies } from "@/utils/auth";
 import { buildPortfolioSnapshot } from "@/lib/server/portfolio";
+import { errorLog } from "@/utils/logger";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -231,7 +232,7 @@ export async function GET(request) {
     });
 
   } catch (e) {
-    console.error("[portfolio/history] error", e);
+    errorLog("portfolio.history.failed", e, { userId });
     return NextResponse.json({ error: "internal_error" }, { status: 500 });
   }
 }

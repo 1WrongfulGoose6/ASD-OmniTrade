@@ -15,6 +15,16 @@ const bcrypt = require('bcryptjs');
 const { prisma } = require('@/utils/prisma');
 const { POST } = require('@/app/api/auth/register/route');
 const { createJsonRequest } = require('@/test-utils/request');
+const { CSRF_COOKIE_NAME } = require('@/utils/csrf');
+
+function csrfOptions(method = 'POST') {
+  const token = 'test-csrf';
+  return {
+    method,
+    headers: { 'x-csrf-token': token },
+    cookies: { [CSRF_COOKIE_NAME]: token },
+  };
+}
 
 describe('POST /api/auth/register', () => {
   beforeEach(() => {
@@ -27,7 +37,11 @@ describe('POST /api/auth/register', () => {
     const createdUser = { id: 1, name: null, email: 'new@example.com', createdAt: new Date().toISOString(), role: 'USER' };
     prisma.user.create.mockResolvedValue(createdUser);
 
-    const req = createJsonRequest('http://localhost/api/auth/register', { email: 'new@example.com', password: 'Secret123!' });
+    const req = createJsonRequest(
+      'http://localhost/api/auth/register',
+      { email: 'new@example.com', password: 'Secret123!' },
+      csrfOptions()
+    );
 
     const res = await POST(req);
     expect(res.status).toBe(201);
@@ -49,7 +63,11 @@ describe('POST /api/auth/register', () => {
   it('rejects duplicate registrations (F02-API-RegisterConflict)', async () => {
     prisma.user.findUnique.mockResolvedValue({ id: 2 });
 
-    const req = createJsonRequest('http://localhost/api/auth/register', { email: 'dupe@example.com', password: 'Secret123!' });
+    const req = createJsonRequest(
+      'http://localhost/api/auth/register',
+      { email: 'dupe@example.com', password: 'Secret123!' },
+      csrfOptions()
+    );
 
     const res = await POST(req);
     expect(res.status).toBe(409);

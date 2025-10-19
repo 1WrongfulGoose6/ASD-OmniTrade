@@ -3,6 +3,7 @@
 
 import React, { useState } from "react";
 import PropTypes from "prop-types";
+import { csrfFetch } from "@/lib/csrfClient";
 
 function toNum(v) {
   if (typeof v === "number") return Number.isFinite(v) ? v : null;
@@ -43,7 +44,7 @@ export default function OrderForm({ symbol, price }) {
 
     setBusy(true);
     try {
-      const res = await fetch("/api/trades", {
+      const res = await csrfFetch("/api/trades", {
         method: "POST",
         headers: { "content-type": "application/json" },
         body: JSON.stringify({

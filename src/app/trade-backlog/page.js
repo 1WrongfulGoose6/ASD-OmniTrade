@@ -9,7 +9,8 @@ import { DayPicker } from 'react-day-picker';
 import 'react-day-picker/dist/style.css';
 import WaveBackground from '@/components/WaveBackground';
 import fetchTradeBacklog from '@/app/trade-backlog/lib/fetchTradeBacklog';
-import { convertToCSV, downloadCSV } from '@/app/trade-backlog/lib/csv';
+import { downloadCSV } from '@/app/trade-backlog/lib/csv';
+import { csrfFetch } from '@/lib/csrfClient';
 
 // ---- helpers ----
 function fmtDateSafe(value) {
@@ -143,14 +144,42 @@ export default function TradeBacklog() {
     }));
   };
 
-  const handleExportCSV = () => {
+  const computeChecksum = async (payload) => {
+    if (!window.crypto?.subtle) return null;
+    const encoder = new TextEncoder();
+    const data = encoder.encode(payload);
+    const digest = await window.crypto.subtle.digest('SHA-256', data);
+    return Array.from(new Uint8Array(digest))
+      .map((b) => b.toString(16).padStart(2, '0'))
+      .join('');
+  };
+
+  const handleExportCSV = async () => {
     if (!trades.length) {
       setValidationWarning('Cannot export: No trades found matching current filters.');
       return;
     }
-    const csv = convertToCSV(trades);
-    const ts = format(new Date(), 'yyyyMMdd_HHmmss');
-    downloadCSV(csv, `Trade_Backlog_${ts}`);
+    try {
+      const res = await csrfFetch('/api/tradeBacklog/export', { method: 'POST' });
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        throw new Error(data.error || `Export failed (${res.status})`);
+      }
+
+      const csv = await res.text();
+      const headerChecksum = res.headers.get('x-checksum');
+      if (headerChecksum) {
+        const computed = await computeChecksum(csv);
+        if (computed && computed !== headerChecksum) {
+          throw new Error('Checksum verification failed. Please retry.');
+        }
+      }
+
+      const ts = format(new Date(), 'yyyyMMdd_HHmmss');
+      downloadCSV(csv, `Trade_Backlog_${ts}`);
+    } catch (err) {
+      setValidationWarning(err.message || 'Export failed.');
+    }
   };
 
   // ---- render ----

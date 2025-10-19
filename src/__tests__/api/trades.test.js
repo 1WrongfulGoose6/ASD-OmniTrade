@@ -23,6 +23,16 @@ const { getUserIdFromCookies } = require('@/utils/auth');
 const { getCashBalance } = require('@/lib/server/portfolio');
 const { POST } = require('@/app/api/trades/route');
 const { createJsonRequest } = require('@/test-utils/request');
+const { CSRF_COOKIE_NAME } = require('@/utils/csrf');
+
+function csrfOptions(method = 'POST') {
+  const token = 'test-csrf';
+  return {
+    method,
+    headers: { 'x-csrf-token': token },
+    cookies: { [CSRF_COOKIE_NAME]: token },
+  };
+}
 
 describe('POST /api/trades', () => {
   beforeEach(() => {
@@ -45,12 +55,16 @@ describe('POST /api/trades', () => {
     prisma.trade.create.mockResolvedValue(createdTrade);
     prisma.tradeBacklog.create.mockResolvedValue({});
 
-    const req = createJsonRequest('http://localhost/api/trades', {
-      symbol: 'aapl',
-      side: 'buy',
-      qty: 2,
-      price: 100,
-    });
+    const req = createJsonRequest(
+      'http://localhost/api/trades',
+      {
+        symbol: 'aapl',
+        side: 'buy',
+        qty: 2,
+        price: 100,
+      },
+      csrfOptions()
+    );
 
     const res = await POST(req);
 
@@ -85,12 +99,16 @@ describe('POST /api/trades', () => {
     ]);
     getCashBalance.mockResolvedValue({ availableCash: 0 });
 
-    const req = createJsonRequest('http://localhost/api/trades', {
-      symbol: 'TSLA',
-      side: 'SELL',
-      qty: 5,
-      price: 200,
-    });
+    const req = createJsonRequest(
+      'http://localhost/api/trades',
+      {
+        symbol: 'TSLA',
+        side: 'SELL',
+        qty: 5,
+        price: 200,
+      },
+      csrfOptions()
+    );
 
     const res = await POST(req);
     expect(res.status).toBe(400);

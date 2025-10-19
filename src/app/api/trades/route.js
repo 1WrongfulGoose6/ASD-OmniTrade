@@ -2,6 +2,7 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/utils/prisma";
 import { getUserIdFromCookies } from "@/utils/auth";
+import { getCashBalance } from "@/lib/server/portfolio";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -47,13 +48,8 @@ export async function POST(request) {
     return NextResponse.json({ error: "Quantity and price must be greater than 0" }, { status: 400 });
   }
 
-  
   if (side === "BUY") {
-    const cashAgg = await prisma.deposit.aggregate({
-      _sum: { amount: true },
-      where: { userId },
-    });
-    const availableCash = Number(cashAgg._sum.amount || 0);
+    const { availableCash } = await getCashBalance(userId);
     const totalCost = qty * price;
 
     if (totalCost > availableCash) {
@@ -109,4 +105,3 @@ export async function POST(request) {
 
   return NextResponse.json({ ok: true, trade }, { status: 200 });
 }
-

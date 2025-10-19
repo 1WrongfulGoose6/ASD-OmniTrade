@@ -2,6 +2,7 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/utils/prisma";
 import { getUserIdFromCookies } from "@/utils/auth";
+import { getCashBalance } from "@/lib/server/portfolio";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -14,37 +15,32 @@ export async function POST(req) {
     }
 
     const body = await req.json();
-    let amount = parseFloat(body.amount);
+    const amountValue = parseFloat(body.amount);
+    let amount = amountValue;
     if (isNaN(amount) || amount <= 0) {
       return NextResponse.json({ error: "Invalid withdrawal amount" }, { status: 400 });
     }
 
-    // Reverse signage for temporary workaround
-    amount = -Math.abs(amount);
-
     // --- Check available cash ---
-    const cashAgg = await prisma.deposit.aggregate({
-      _sum: { amount: true },
-      where: { userId },
-    });
-    const availableCash = Number(cashAgg._sum.amount || 0);
+    const { availableCash } = await getCashBalance(userId);
 
-    if (Math.abs(amount) > availableCash) {
+    if (amount > availableCash) {
       return NextResponse.json(
         { error: `Insufficient funds. Available cash: ${availableCash.toFixed(2)} AUD` },
         { status: 400 }
       );
     }
 
-    // --- Store as negative deposit ---
+    // --- Store as withdrawal entry ---
     const withdrawalRecord = await prisma.deposit.create({
       data: {
         amount,
+        kind: "WITHDRAW",
         userId,
       },
     });
 
-    return NextResponse.json(withdrawalRecord);
+    return NextResponse.json({ ...withdrawalRecord, amount: -Math.abs(amount) });
   } catch (err) {
     console.error("[withdraw POST] error", err);
     return NextResponse.json({ error: err.message }, { status: 500 });
@@ -56,16 +52,25 @@ export async function GET() {
     const userId = await getUserIdFromCookies();
     if (!userId) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
 
-    // Fetch only negative amounts to show withdrawals
+    // Fetch withdrawals (supporting legacy negative entries)
     const items = await prisma.deposit.findMany({
-      where: { userId, amount: { lt: 0 } },
+      where: {
+        userId,
+        OR: [
+          { kind: "WITHDRAW" },
+          { amount: { lt: 0 } },
+        ],
+      },
       orderBy: { createdAt: "desc" },
       take: 50,
     });
 
-    console.log("Withdrawals found:", items);
+    const normalized = items.map((item) => ({
+      ...item,
+      amount: item.kind === "WITHDRAW" ? -Math.abs(item.amount) : item.amount,
+    }));
 
-    return NextResponse.json({ withdrawals: items }, { status: 200 });
+    return NextResponse.json({ withdrawals: normalized }, { status: 200 });
   } catch (e) {
     console.error("[withdraw GET] error", e);
     return NextResponse.json({ error: "internal_error" }, { status: 500 });

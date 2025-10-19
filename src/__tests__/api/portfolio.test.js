@@ -5,9 +5,12 @@ jest.mock('@/utils/prisma', () => ({
     },
     deposit: {
       findMany: jest.fn(),
-      aggregate: jest.fn(),
     },
   },
+}));
+
+jest.mock('@/lib/market/quotes', () => ({
+  getQuotes: jest.fn(),
 }));
 
 jest.mock('@/utils/auth', () => ({
@@ -16,6 +19,7 @@ jest.mock('@/utils/auth', () => ({
 
 const { prisma } = require('@/utils/prisma');
 const { getUserIdFromCookies } = require('@/utils/auth');
+const { getQuotes } = require('@/lib/market/quotes');
 const { GET } = require('@/app/api/portfolio/route');
 
 describe('GET /api/portfolio', () => {
@@ -25,13 +29,15 @@ describe('GET /api/portfolio', () => {
 
   it('aggregates holdings and cash correctly (F04-API-HoldingsAggregation)', async () => {
     getUserIdFromCookies.mockResolvedValue(7);
+    getQuotes.mockResolvedValue([
+      { symbol: 'AMD', price: 56, changePercent: 0 },
+    ]);
     prisma.trade.findMany.mockResolvedValue([
       { symbol: 'amd', side: 'BUY', qty: 2, price: 50 },
       { symbol: 'AMD', side: 'BUY', qty: 3, price: 60 },
       { symbol: 'AMD', side: 'SELL', qty: 1, price: 55 },
     ]);
-    prisma.deposit.findMany.mockResolvedValue([{ amount: 500 }]);
-    prisma.deposit.aggregate.mockResolvedValue({ _sum: { amount: 500 } });
+    prisma.deposit.findMany.mockResolvedValue([{ amount: 500, kind: 'DEPOSIT' }]);
 
     const res = await GET();
     expect(res.status).toBe(200);
@@ -42,7 +48,7 @@ describe('GET /api/portfolio', () => {
     expect(holding.symbol).toBe('AMD');
     expect(holding.shares).toBe(4);
     expect(holding.avgCost).toBeCloseTo(56);
-    expect(payload.totals.cashAud).toBe(500);
+    expect(payload.totals.cashAud).toBe(275);
     expect(payload.totals.totalValue).toBeCloseTo(224);
   });
 

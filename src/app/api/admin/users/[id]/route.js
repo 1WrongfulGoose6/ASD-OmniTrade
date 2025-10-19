@@ -1,14 +1,13 @@
 // src/app/api/admin/users/[id]/route.js
 import { NextResponse } from 'next/server';
 import { prisma } from '@/utils/prisma';
-import bcrypt from 'bcryptjs';
-import { getUserIdFromCookies } from '@/utils/auth';
+import { getUserSession } from '@/utils/auth';
 
 async function requireAdmin() {
-  const id = await getUserIdFromCookies();
-  if (!id) return { error: 'not authenticated', code: 401 };
-  // Simplified 
-  return { ok: true, id };
+  const session = await getUserSession();
+  if (!session) return { error: 'not authenticated', code: 401 };
+  if (session.role !== 'ADMIN') return { error: 'forbidden', code: 403 };
+  return { ok: true, id: session.id };
 }
 
 // GET one user by id

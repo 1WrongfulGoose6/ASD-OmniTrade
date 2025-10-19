@@ -16,7 +16,7 @@ export default function MarketListPage() {
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState(null);
     const [searchTerm, setSearchTerm] = useState("");
-    const [warning, setWarning] = useState(""); // 🟡 New state for warnings
+    const [helper, setHelper] = useState("");
 
     useEffect(() => {
         const fetchMarketData = async () => {
@@ -43,16 +43,13 @@ export default function MarketListPage() {
             coin.symbol.toLowerCase().includes(searchTerm.toLowerCase())
     );
 
-    // 🧠 Watch search term for warnings
     useEffect(() => {
-        if (/\d/.test(searchTerm)) {
-            setWarning("⚠️ Numbers are not allowed in the search.");
-        } else if (searchTerm.length > 6) {
-            setWarning("⚠️ Search term too long — please enter up to 6 letters.");
+        if (searchTerm.length > 12) {
+            setHelper("Search is limited to 12 characters for performance.");
         } else if (searchTerm && filteredCoins.length === 0) {
-            setWarning("⚠️ No matching results found.");
+            setHelper("No matching results. Try a different ticker or name.");
         } else {
-            setWarning("");
+            setHelper("");
         }
     }, [searchTerm, filteredCoins]);
 
@@ -87,10 +84,9 @@ export default function MarketListPage() {
                     />
                 </div>
 
-                {/* 🟡 Warning Message */}
-                {warning && (
-                    <p className="text-center text-yellow-200 font-medium mb-4 animate-pulse">
-                        {warning}
+                {helper && (
+                    <p className="mb-4 text-center text-sm text-white/80">
+                        {helper}
                     </p>
                 )}
 

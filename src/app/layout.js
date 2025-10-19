@@ -2,6 +2,8 @@ import React from "react";
 import PropTypes from "prop-types";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
+import { AuthProvider } from "@/components/providers/AuthProvider";
+import { getCurrentUser } from "@/lib/server/currentUser";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -60,13 +62,17 @@ export const viewport = {
   ],
 };
 
-export default function RootLayout({ children }) {
+export default async function RootLayout({ children }) {
+  const currentUser = await getCurrentUser().catch(() => null);
+
   return (
     <html lang="en">
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
-        {children}
+        <AuthProvider initialUser={currentUser}>
+          {children}
+        </AuthProvider>
       </body>
     </html>
   );

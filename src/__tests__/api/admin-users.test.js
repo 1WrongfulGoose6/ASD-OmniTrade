@@ -13,11 +13,13 @@ jest.mock('@/utils/prisma', () => ({
 }));
 
 jest.mock('@/utils/auth', () => ({
-  getUserIdFromCookies: jest.fn(),
+  getUserSession: jest.fn(),
+  applySessionCookie: jest.fn(),
+  createSessionToken: jest.fn().mockReturnValue('token'),
 }));
 
 const { prisma } = require('@/utils/prisma');
-const { getUserIdFromCookies } = require('@/utils/auth');
+const { getUserSession } = require('@/utils/auth');
 const { PATCH } = require('@/app/api/admin/users/[id]/route');
 const { GET } = require('@/app/api/admin/users/route');
 const { POST: LOGIN_POST } = require('@/app/api/auth/login/route');
@@ -29,7 +31,7 @@ describe('Admin user management routes', () => {
   });
 
   it('blacklists a user and prevents login (F03-API-Blacklist)', async () => {
-    getUserIdFromCookies.mockResolvedValue(1); // admin
+    getUserSession.mockResolvedValue({ id: 1, role: 'ADMIN' });
     const updatedUser = { id: 5, email: 'user@example.com', blacklisted: true };
     prisma.user.update.mockResolvedValue(updatedUser);
 
@@ -59,7 +61,7 @@ describe('Admin user management routes', () => {
   });
 
   it('requires authentication to list users (F03-API-UsersAuthGuard)', async () => {
-    getUserIdFromCookies.mockResolvedValueOnce(null);
+    getUserSession.mockResolvedValueOnce(null);
 
     const res = await GET();
     expect(res.status).toBe(401);

@@ -1,31 +1,31 @@
-// src/app/api/auth/me/route.js
 import { NextResponse } from "next/server";
+import bcrypt from "bcryptjs";
 import { prisma } from "@/utils/prisma";
-import { getUserIdFromCookies } from "@/utils/auth";
-
-import bcrypt from "bcryptjs"; // for password check
-
+import {
+  applySessionCookie,
+  createSessionToken,
+  getUserIdFromCookies,
+  getUserSession,
+} from "@/utils/auth";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 export async function GET() {
-  const userId = await getUserIdFromCookies();
-  if (!userId) return NextResponse.json({ user: null }, { status: 200 });
+  const session = await getUserSession();
+  if (!session) return NextResponse.json({ user: null }, { status: 200 });
 
   const user = await prisma.user.findUnique({
-    where: { id: userId },
-    select: { id: true, name: true, email: true }
+    where: { id: session.id },
+    select: { id: true, name: true, email: true, role: true, blacklisted: true },
   });
 
   if (!user || user.blacklisted) {
-    return NextResponse.json({ error: "This account has been blacklisted" }, { status: 403 }); // blacklisted check
+    return NextResponse.json({ error: "This account has been blacklisted" }, { status: 403 });
   }
 
   return NextResponse.json({ user });
 }
-
-
 
 // PUT update current user profile (name + email)
 export async function PUT(req) {
@@ -46,10 +46,11 @@ export async function PUT(req) {
       return NextResponse.json({ error: "email already in use" }, { status: 409 });
     }
 
-    let update = { name, email };
+    const update = { name, email };
 
     if (newPassword) {
       const me = await prisma.user.findUnique({ where: { id: Number(uid) } });
+      if (!me) return NextResponse.json({ error: "user not found" }, { status: 404 });
       const match = await bcrypt.compare(currentPassword || "", me.passwordHash);
       if (!match) {
         return NextResponse.json({ error: "wrong current password" }, { status: 401 });
@@ -60,11 +61,15 @@ export async function PUT(req) {
     const updated = await prisma.user.update({
       where: { id: Number(uid) },
       data: update,
-      select: { id: true, name: true, email: true },
+      select: { id: true, name: true, email: true, role: true },
     });
 
-    return NextResponse.json({ user: updated });
+    const res = NextResponse.json({ user: updated });
+    const token = createSessionToken(updated);
+    applySessionCookie(res, token);
+    return res;
   } catch {
-  return NextResponse.json({ error: "server error" }, { status: 500 });
+    return NextResponse.json({ error: "server error" }, { status: 500 });
   }
 }
+

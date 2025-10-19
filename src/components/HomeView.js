@@ -1,14 +1,14 @@
-// src/components/HomeView.js
 'use client';
 
 import React from 'react';
 import Link from 'next/link';
-import NavBar from '@/components/NavBar';
 import PropTypes from 'prop-types';
+import NavBar from '@/components/NavBar';
 import WaveBackground from '@/components/WaveBackground';
+import { useAuth } from '@/components/providers/AuthProvider';
 
 function funGreeting(nameLike) {
-  if (!nameLike) return "Welcome to OmniTrade";
+  if (!nameLike) return 'Welcome to OmniTrade';
   const name = String(nameLike).split('@')[0];
   const options = [
     `Hey ${name}, ready to outsmart the market?`,
@@ -21,94 +21,56 @@ function funGreeting(nameLike) {
   return options[idx];
 }
 
-export default function HomeView({ news = [] }) {
+export default function HomeView({
+  news = [],
+  initialWatchItems = [],
+  trending = [],
+}) {
+  const { user } = useAuth();
   const top = news.slice(0, 3);
 
-  const [user, setUser] = React.useState(null);
-  const [watch, setWatch] = React.useState([]);
-  const [watchRows, setWatchRows] = React.useState([]);
+  const [watchItems, setWatchItems] = React.useState(initialWatchItems);
   const [watchErr, setWatchErr] = React.useState(null);
+  const [watchLoading, setWatchLoading] = React.useState(false);
 
-  async function loadMe() {
+  const prefetched = React.useRef(initialWatchItems.length > 0);
+
+  const loadWatchlist = React.useCallback(async () => {
+    setWatchLoading(true);
+    setWatchErr(null);
     try {
-      const res = await fetch('/api/auth/me', { cache: 'no-store' });
-      const data = await res.json();
-      setUser(data.user || null);
-    } catch {
-      setUser(null);
+      const res = await fetch('/api/watchlist', { cache: 'no-store' });
+      if (res.status === 401) {
+        setWatchItems([]);
+        setWatchErr(null);
+        return;
+      }
+      if (!res.ok) throw new Error(`watchlist ${res.status}`);
+      const data = await res.json().catch(() => ({}));
+      const items = Array.isArray(data.items) ? data.items : [];
+      setWatchItems(items);
+    } catch (error) {
+      setWatchErr(error.message || 'Failed to load watchlist');
+      setWatchItems([]);
+    } finally {
+      setWatchLoading(false);
     }
-  }
-
-  // Who's logged in? + react to global auth changes
-  React.useEffect(() => {
-    let off = false;
-    (async () => { if (!off) await loadMe(); })();
-    const onAuth = () => loadMe();
-    window.addEventListener('auth:changed', onAuth);
-    return () => { off = true; window.removeEventListener('auth:changed', onAuth); };
   }, []);
 
-  // Load server watchlist
   React.useEffect(() => {
-    let off = false;
+    if (prefetched.current) {
+      prefetched.current = false;
+    } else {
+      loadWatchlist();
+    }
 
-    const load = async () => {
-      try {
-        const res = await fetch('/api/watchlist', { cache: 'no-store' });
-        const data = await res.json().catch(() => ({}));
-        const items = Array.isArray(data.items) ? data.items : [];
-        const list = items.map(i => ({ symbol: i.symbol, name: i.name || i.symbol }));
-        if (!off) setWatch(list);
-      } catch {
-        if (!off) setWatch([]);
-      }
-    };
-
-    load();
-
-    const onChanged = () => load();
+    const onChanged = () => loadWatchlist();
     window.addEventListener('watchlist:changed', onChanged);
-
-    return () => {
-      off = true;
-      window.removeEventListener('watchlist:changed', onChanged);
-    };
-  }, []);
-
-  // Fetch market data and filter to watchlist symbols
-  React.useEffect(() => {
-    let cancelled = false;
-
-    (async () => {
-      setWatchErr(null);
-      try {
-        if (!watch.length) { setWatchRows([]); return; }
-
-        const res = await fetch('/api/marketdata', { cache: 'no-store' });
-        if (!res.ok) throw new Error(`marketdata ${res.status}`);
-        const all = await res.json();
-
-        const setSymbols = new Set(
-          watch.map(w => (w.symbol || '').toUpperCase())
-        );
-
-        const filtered = (Array.isArray(all) ? all : []).filter(
-          r => setSymbols.has((r.symbol || '').toUpperCase())
-        );
-
-        if (!cancelled) setWatchRows(filtered);
-      } catch (e) {
-        if (!cancelled) {
-          setWatchErr(e.message || 'Failed to load watchlist quotes');
-          setWatchRows([]);
-        }
-      }
-    })();
-
-    return () => { cancelled = true; };
-  }, [watch]);
+    return () => window.removeEventListener('watchlist:changed', onChanged);
+  }, [loadWatchlist]);
 
   const headline = funGreeting(user?.name || user?.email);
+  const hasWatch = watchItems.length > 0;
 
   return (
     <main className="relative min-h-screen overflow-hidden bg-gradient-to-br from-blue-600 to-blue-400 text-white">
@@ -121,7 +83,10 @@ export default function HomeView({ news = [] }) {
           {headline}
         </h1>
         <div className="mt-8">
-          <Link href="/portfolio" className="inline-block rounded-xl bg-white px-6 py-3 text-base font-semibold text-blue-700 shadow hover:bg-blue-50">
+          <Link
+            href="/portfolio"
+            className="inline-block rounded-xl bg-white px-6 py-3 text-base font-semibold text-blue-700 shadow hover:bg-blue-50"
+          >
             View Portfolio
           </Link>
         </div>
@@ -137,19 +102,41 @@ export default function HomeView({ news = [] }) {
             </Link>
           </div>
 
-          {watchErr ? (
+          {watchLoading && (
+            <ul className="mt-4 grid grid-cols-1 gap-3 md:grid-cols-2 lg:grid-cols-3">
+              {Array.from({ length: 3 }).map((_, idx) => (
+                <li key={idx} className="rounded-lg bg-white/70 p-4">
+                  <div className="flex animate-pulse items-center justify-between gap-4">
+                    <div className="h-4 w-24 rounded bg-gray-200" />
+                    <div className="flex flex-col items-end gap-2">
+                      <div className="h-4 w-12 rounded bg-gray-200" />
+                      <div className="h-3 w-10 rounded bg-gray-200" />
+                    </div>
+                  </div>
+                </li>
+              ))}
+            </ul>
+          )}
+
+          {!watchLoading && watchErr && (
             <p className="mt-3 text-sm text-red-700">{watchErr}</p>
-          ) : watch.length === 0 ? (
+          )}
+
+          {!watchLoading && !watchErr && !hasWatch && (
             <p className="mt-3 text-sm text-gray-600">
               You haven’t added any tickers yet. Visit{' '}
-              <Link href="/market-data-display" className="text-blue-600 underline">Stocks</Link>
-              {' '}and tap the ⭐ to add some.
+              <Link href="/market-data-display" className="text-blue-600 underline">
+                Stocks
+              </Link>{' '}
+              and tap the ⭐ to add some.
             </p>
-          ) : (
+          )}
+
+          {!watchLoading && !watchErr && hasWatch && (
             <ul className="mt-4 grid grid-cols-1 gap-3 md:grid-cols-2 lg:grid-cols-3">
-              {watchRows.slice(0, 6).map((row) => {
-                const change = (row.change ?? row.change24h ?? '').toString();
-                const isUp = change.trim().startsWith('+') || Number(row.change ?? 0) > 0;
+              {watchItems.slice(0, 6).map((row) => {
+                const change = (row.change ?? '').toString();
+                const isUp = change.trim().startsWith('+') || Number(row.changePercent ?? 0) > 0;
                 return (
                   <li key={row.symbol} className="rounded-lg bg-white/70 p-4">
                     <div className="flex items-center justify-between">
@@ -161,7 +148,7 @@ export default function HomeView({ news = [] }) {
                       </Link>
                       <div className="text-right">
                         <div className="text-sm text-gray-900">
-                          {row.price ?? row.currentPrice ?? '—'}
+                          {row.price != null ? `$${Number(row.price).toFixed(2)}` : '—'}
                         </div>
                         <div className={`text-xs font-medium ${isUp ? 'text-emerald-600' : 'text-red-600'}`}>
                           {change || '—'}
@@ -183,17 +170,24 @@ export default function HomeView({ news = [] }) {
           <div className="rounded-2xl border border-white/25 bg-white/85 p-6 text-gray-900 backdrop-blur">
             <h2 className="text-lg font-semibold">Market News</h2>
             <ul className="mt-4 space-y-3 text-sm text-gray-700">
-              {top.length > 0 ? top.map((n) => (
-                <li key={n.id} className="rounded-md bg-white/60 p-3">
-                  <a href={n.url} target="_blank" rel="noopener noreferrer" className="font-medium hover:underline">
-                    • {n.headline}
-                  </a>
-                  <div className="mt-1 text-xs text-gray-500">
-                    {n.source ? `${n.source} • ` : ''}
-                    {n.datetime ? new Date(n.datetime * 1000).toLocaleDateString() : ''}
-                  </div>
-                </li>
-              )) : (
+              {top.length > 0 ? (
+                top.map((n) => (
+                  <li key={n.id} className="rounded-md bg-white/60 p-3">
+                    <a
+                      href={n.url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="font-medium hover:underline"
+                    >
+                      • {n.headline}
+                    </a>
+                    <div className="mt-1 text-xs text-gray-500">
+                      {n.source ? `${n.source} • ` : ''}
+                      {n.datetime ? new Date(n.datetime * 1000).toLocaleDateString() : ''}
+                    </div>
+                  </li>
+                ))
+              ) : (
                 <li className="rounded-md bg-white/60 p-3">• No headlines right now</li>
               )}
             </ul>
@@ -204,28 +198,42 @@ export default function HomeView({ news = [] }) {
             </div>
           </div>
 
-          {/* Trending Stocks (simple placeholder) */}
+          {/* Trending Stocks */}
           <div className="rounded-2xl border border-white/25 bg-white/85 p-6 text-gray-900 backdrop-blur">
             <h2 className="text-lg font-semibold">Trending Stocks</h2>
-            <div className="mt-4 grid grid-cols-3 gap-3 text-sm">
-              <div className="rounded-md bg-white/60 p-3">
-                <div className="font-medium">AAPL</div>
-                <div className="text-gray-600">$172.39</div>
-                <div className="text-emerald-600">+1.25%</div>
+            {trending.length === 0 ? (
+              <p className="mt-3 text-sm text-gray-600">
+                We couldn’t load trending data right now. Check back soon.
+              </p>
+            ) : (
+              <div className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-2">
+                {trending.slice(0, 4).map((item) => {
+                  const change = (item.change ?? '').toString();
+                  const isUp = change.trim().startsWith('+') || Number(item.changePercent ?? 0) > 0;
+                  return (
+                    <Link
+                      key={item.symbol}
+                      href={`/market-data-display/detail/${item.symbol}`}
+                      className="rounded-md bg-white/60 p-3 transition hover:bg-white/80"
+                    >
+                      <div className="font-medium">{item.symbol}</div>
+                      <div className="text-sm text-gray-600">{item.name}</div>
+                      <div className="mt-2 text-gray-900">
+                        {item.price != null ? `$${Number(item.price).toFixed(2)}` : '—'}
+                      </div>
+                      <div className={`text-sm font-semibold ${isUp ? 'text-emerald-600' : 'text-red-600'}`}>
+                        {change || '—'}
+                      </div>
+                    </Link>
+                  );
+                })}
               </div>
-              <div className="rounded-md bg-white/60 p-3">
-                <div className="font-medium">MSFT</div>
-                <div className="text-gray-600">$310.65</div>
-                <div className="text-emerald-600">+0.98%</div>
-              </div>
-              <div className="rounded-md bg-white/60 p-3">
-                <div className="font-medium">AMZN</div>
-                <div className="text-gray-600">$153.76</div>
-                <div className="text-red-600">-0.74%</div>
-              </div>
-            </div>
+            )}
             <div className="mt-6">
-              <Link href="/market-data-display" className="text-sm font-medium text-blue-700 hover:underline">
+              <Link
+                href="/market-data-display"
+                className="text-sm font-medium text-blue-700 hover:underline"
+              >
                 Explore stocks →
               </Link>
             </div>
@@ -237,5 +245,23 @@ export default function HomeView({ news = [] }) {
 }
 
 HomeView.propTypes = {
-  news: PropTypes.any,
+  news: PropTypes.array,
+  initialWatchItems: PropTypes.arrayOf(
+    PropTypes.shape({
+      symbol: PropTypes.string.isRequired,
+      name: PropTypes.string,
+      price: PropTypes.number,
+      change: PropTypes.string,
+      changePercent: PropTypes.number,
+    })
+  ),
+  trending: PropTypes.arrayOf(
+    PropTypes.shape({
+      symbol: PropTypes.string.isRequired,
+      name: PropTypes.string,
+      price: PropTypes.number,
+      change: PropTypes.string,
+      changePercent: PropTypes.number,
+    })
+  ),
 };

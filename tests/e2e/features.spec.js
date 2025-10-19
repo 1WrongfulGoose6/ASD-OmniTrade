@@ -211,6 +211,16 @@ test.describe('Feature scenarios', () => {
       },
     ];
     await page.route('**/api/tradeBacklog', (route) => route.fulfill(jsonResponse(trades)));
+    await page.route('**/api/tradeBacklog/export', (route) =>
+      route.fulfill({
+        status: 200,
+        headers: {
+          'content-type': 'text/csv',
+          'x-checksum': 'dummy',
+        },
+        body: 'id,asset\n1,AAPL\n',
+      })
+    );
 
     await page.goto('/trade-backlog');
     const downloadPromise = page.waitForEvent('download');
@@ -270,7 +280,7 @@ test.describe('Feature scenarios', () => {
       ),
     );
 
-    const pagesToCheck = ['/', '/portfolio', '/trade', '/news'];
+    const pagesToCheck = ['/', '/portfolio', '/trade?symbol=AAPL', '/news'];
 
     for (const path of pagesToCheck) {
       await page.goto(path);

@@ -9,7 +9,6 @@ import { DayPicker } from 'react-day-picker';
 import 'react-day-picker/dist/style.css';
 import WaveBackground from '@/components/WaveBackground';
 import fetchTradeBacklog from '@/app/trade-backlog/lib/fetchTradeBacklog';
-import { downloadCSV } from '@/app/trade-backlog/lib/csv';
 import { csrfFetch } from '@/lib/csrfClient';
 
 // ---- helpers ----
@@ -154,7 +153,7 @@ export default function TradeBacklog() {
       .join('');
   };
 
-  const handleExportCSV = async () => {
+	const handleExportCSV = async () => {
     if (!trades.length) {
       setValidationWarning('Cannot export: No trades found matching current filters.');
       return;
@@ -175,8 +174,20 @@ export default function TradeBacklog() {
         }
       }
 
-      const ts = format(new Date(), 'yyyyMMdd_HHmmss');
-      downloadCSV(csv, `Trade_Backlog_${ts}`);
+	      const ts = format(new Date(), 'yyyyMMdd_HHmmss');
+	      if (typeof window === 'undefined') {
+	        console.error('window is not available for CSV download');
+	        return;
+	      }
+	      const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+	      const url = window.URL.createObjectURL(blob);
+	      const link = document.createElement('a');
+	      link.href = url;
+	      link.setAttribute('download', `Trade_Backlog_${ts}.csv`);
+	      document.body.appendChild(link);
+	      link.click();
+	      document.body.removeChild(link);
+	      window.URL.revokeObjectURL(url);
     } catch (err) {
       setValidationWarning(err.message || 'Export failed.');
     }

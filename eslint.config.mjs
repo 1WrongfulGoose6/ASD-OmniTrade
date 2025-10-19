@@ -2,6 +2,7 @@ import js from "@eslint/js";
 import globals from "globals";
 import pluginReact from "eslint-plugin-react";
 import pluginReactHooks from "eslint-plugin-react-hooks";
+import pluginNext from "@next/eslint-plugin-next";
 import { defineConfig } from "eslint/config";
 
 export default defineConfig([
@@ -24,6 +25,15 @@ export default defineConfig([
   },
 
   {
+    files: ["**/*.{js,jsx}"],
+    plugins: {
+      "@next/next": pluginNext,
+    },
+    rules: pluginNext.configs["core-web-vitals"].rules,
+    settings: pluginNext.configs["core-web-vitals"].settings ?? {},
+  },
+
+  {
     files: ["**/__tests__/**", "**/*.test.{js,jsx}", "src/**/__tests__/**"],
     languageOptions: { globals: { 
       describe: "readonly", 
@@ -32,6 +42,8 @@ export default defineConfig([
       expect: "readonly", 
       beforeEach: "readonly", 
       afterEach: "readonly",
+      beforeAll: "readonly",
+      afterAll: "readonly",
       jest: "readonly",
       global: "readonly"
     } },

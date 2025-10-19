@@ -55,3 +55,7 @@ node_modules
 *.lcov
 
 .github/
+
+# SAST Security Scanning - Coverity
+cov-int/
+SAST-Scan.tgz

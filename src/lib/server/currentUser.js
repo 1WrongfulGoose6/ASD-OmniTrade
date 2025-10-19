@@ -1,5 +1,6 @@
 import { prisma } from "@/utils/prisma";
 import { getUserSession } from "@/utils/auth";
+import { decryptField } from "@/utils/encryption";
 
 export async function getCurrentUser() {
   const session = await getUserSession();
@@ -11,6 +12,8 @@ export async function getCurrentUser() {
   });
 
   if (!user || user.blacklisted) return null;
-  return user;
+  return {
+    ...user,
+    name: decryptField(user.name),
+  };
 }
-

@@ -2,6 +2,7 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
+import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import NavBar from "@/components/NavBar";
 import WaveBackground from "@/components/WaveBackground";
@@ -93,12 +94,12 @@ export default function TradePageClient() {
           <section className="flex-1 flex flex-col gap-4">
             {/* Mini header */}
             <div className="relative bg-white/70 rounded-2xl p-4 shadow-sm flex flex-col items-center text-gray-800">
-              <a
+              <Link
                 href="/market-data-display/detail"
                 className="absolute top-2 left-4 text-blue-600 hover:underline"
               >
                 ← Back
-              </a>
+              </Link>
               <div className="text-center">
                 <div className="text-sm text-gray-500">
                   {symbol}

@@ -6,6 +6,7 @@ import PropTypes from 'prop-types';
 import NavBar from '@/components/NavBar';
 import WaveBackground from '@/components/WaveBackground';
 import { useAuth } from '@/components/providers/AuthProvider';
+import { formatEpochDateShort } from '@/lib/formatUtc';
 
 function funGreeting(nameLike) {
   if (!nameLike) return 'Welcome to OmniTrade';
@@ -183,7 +184,7 @@ export default function HomeView({
                     </a>
                     <div className="mt-1 text-xs text-gray-500">
                       {n.source ? `${n.source} • ` : ''}
-                      {n.datetime ? new Date(n.datetime * 1000).toLocaleDateString() : ''}
+                      {n.datetime ? formatEpochDateShort(n.datetime) : ''}
                     </div>
                   </li>
                 ))

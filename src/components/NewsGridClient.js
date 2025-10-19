@@ -3,6 +3,7 @@
 import React from 'react';
 import BookmarkButton from '@/components/BookmarkButton';
 import PropTypes from 'prop-types';
+import { formatEpochDateShort } from '@/lib/formatUtc';
 
 const STORAGE_KEY = 'omni.bookmarks.v1';
 
@@ -69,7 +70,7 @@ export default function NewsGridClient({ items }) {
               <span className="rounded-full bg-blue-100 px-2 py-0.5 font-medium text-blue-700">
                 {n.source ?? 'News'}
               </span>
-              <span>{n.datetime ? new Date(n.datetime * 1000).toLocaleString() : ''}</span>
+              <span>{n.datetime ? formatEpochDateShort(n.datetime) : ''}</span>
             </div>
 
             <a

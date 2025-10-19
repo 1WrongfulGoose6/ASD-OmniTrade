@@ -5,6 +5,7 @@ import React, { useMemo, useState, useEffect, useCallback } from 'react';
 import BookmarkButton from './BookmarkButton';
 import PropTypes from 'prop-types';
 import { read as readStore, isBookmarkKey, getUid } from '@/lib/bookmarksStore';
+import { formatEpochDateShort } from '@/lib/formatUtc';
 
 export default function NewsLoadMore({ items = [], initialCount = 8, step = 6 }) {
   const [visible, setVisible] = useState(initialCount);
@@ -75,7 +76,7 @@ export default function NewsLoadMore({ items = [], initialCount = 8, step = 6 })
                 </span>
                 {n.datetime ? (
                   <time dateTime={new Date(n.datetime * 1000).toISOString()} suppressHydrationWarning>
-                    {new Date(n.datetime * 1000).toLocaleString()}
+                    {formatEpochDateShort(n.datetime)}
                   </time>
                 ) : null}
               </div>

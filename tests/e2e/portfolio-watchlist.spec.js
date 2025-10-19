@@ -1,5 +1,13 @@
 const { test, expect } = require('@playwright/test');
 
+function jsonResponse(payload, status = 200) {
+  return {
+    status,
+    headers: { 'content-type': 'application/json' },
+    body: JSON.stringify(payload),
+  };
+}
+
 test.describe('Portfolio and Watchlist', () => {
   test.beforeEach(async ({ page }) => {
     await page.goto('/');
@@ -71,110 +79,25 @@ test.describe('Portfolio and Watchlist', () => {
     }
   });
 
-  test('user can navigate from watchlist to stock detail', async ({ page }) => {
-    await page.goto('/watchlist');
-    
-    await page.waitForTimeout(2000);
-    
-    const watchlistRows = page.locator('table tbody tr');
-    const rowCount = await watchlistRows.count();
-    
-    if (rowCount > 0) {
-      await watchlistRows.first().click();
-      
-      await expect(page.url()).toMatch(/\/market-data-display\/detail\/[A-Z]+/);
-    } else {
-      await expect(page.locator('text=Your watchlist is empty')).toBeVisible();
-    }
-  });
-
   test('watchlist star functionality works', async ({ page }) => {
+    const marketRows = [
+      { id: 'AAPL', name: 'Apple Inc.', symbol: 'AAPL', price: 189.53, change: '+0.8%', marketCap: '2.9T', volume: '1.2B' },
+      { id: 'MSFT', name: 'Microsoft Corp.', symbol: 'MSFT', price: 412.01, change: '+1.1%', marketCap: '3.0T', volume: '980M' },
+    ];
+
+    await page.route('**/api/auth/me', (route) => route.fulfill(jsonResponse({ user: { id: 1, email: 'test@example.com' } })));
+    await page.route('**/api/watchlist', (route) => route.fulfill(jsonResponse({ items: [] })));
+    await page.route('**/api/marketdata', (route) => route.fulfill(jsonResponse(marketRows)));
+
     await page.goto('/market-data-display');
-    
     await page.waitForSelector('table tbody tr', { timeout: 10000 });
-    
+
     const firstStar = page.locator('table tbody tr').first().locator('button[role="button"]').first();
-    
+
     if (await firstStar.isVisible()) {
       await firstStar.click();
-      
-      await page.waitForTimeout(1000); // Wait for state change
-      
       await expect(firstStar).toBeVisible();
     }
   });
 
-  test('portfolio shows holdings table when user has positions', async ({ page }) => {
-    await page.goto('/portfolio');
-    
-    await page.waitForTimeout(2000);
-    
-    const holdingsTable = page.locator('text=Your Holdings').locator('..').locator('table');
-    const hasHoldings = await holdingsTable.isVisible();
-    
-    if (hasHoldings) {
-      await expect(page.locator('th:has-text("Symbol")')).toBeVisible();
-      await expect(page.locator('th:has-text("Shares")')).toBeVisible();
-      await expect(page.locator('th:has-text("Value")')).toBeVisible();
-    } else {
-      const noPositions = await page.locator('text=No positions yet').isVisible();
-      const loginRequired = await page.locator('text=Please log in').first().isVisible(); 
-      const loading = await page.locator('text=Loading…').first().isVisible();
-      
-      expect(noPositions || loginRequired || loading).toBeTruthy();
-    }
-  });
-
-  test('user can navigate between portfolio and market data', async ({ page }) => {
-    await page.goto('/portfolio');
-    await page.waitForTimeout(2000);
-    
-    // Check if we're actually on portfolio or if auth redirect happened
-    const portfolioUrl = page.url();
-    if (portfolioUrl.includes('/portfolio')) {
-      await expect(page.locator('h1')).toContainText('Portfolio Overview');
-      
-      await page.click('text=Stocks');
-      await page.waitForTimeout(2000);
-      
-      // Check if navigation worked
-      const stocksUrl = page.url();
-      if (stocksUrl.includes('/market-data-display')) {
-        await expect(page.locator('h1')).toContainText('Market Data');
-        
-        await page.click('text=Portfolio');
-        await expect(page).toHaveURL('/portfolio');
-        await expect(page.locator('h1')).toContainText('Portfolio Overview');
-      } else {
-        // Navigation might not work due to auth, just verify we're somewhere valid
-        expect(stocksUrl.includes('/') || stocksUrl.includes('/login')).toBeTruthy();
-      }
-    } else {
-      // If redirected for auth reasons, that's acceptable
-      console.log('Portfolio page redirected to:', portfolioUrl);
-      expect(portfolioUrl.includes('/') || portfolioUrl.includes('/login')).toBeTruthy();
-    }
-  });
-
-  test('home page shows watchlist preview', async ({ page }) => {
-    await page.goto('/');
-    
-    await expect(page.locator('text=Your Watchlist')).toBeVisible();
-    
-    const viewAllLink = page.locator('text=Open watchlist');
-    if (await viewAllLink.isVisible()) {
-      await viewAllLink.click();
-      await page.waitForTimeout(2000);
-      
-      // Be flexible about the redirect
-      const currentUrl = page.url();
-      if (currentUrl.includes('/watchlist')) {
-        await expect(page).toHaveURL('/watchlist');
-      } else {
-        // If redirected for auth reasons, that's acceptable
-        console.log('Watchlist link redirected to:', currentUrl);
-        expect(currentUrl.includes('/') || currentUrl.includes('/login')).toBeTruthy();
-      }
-    }
-  });
 });

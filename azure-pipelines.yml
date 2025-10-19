@@ -13,11 +13,65 @@ variables:
   HUSKY: '0'
   CI: 'true'
   NODE_OPTIONS: '--max-old-space-size=4096'  # Increase Node.js memory limit
-
+  EnableCoverityScan: 'false'  # Toggle to run Coverity Scan job
+  COVERITY_SCAN_PROJECT: 'ASD-OmniTrade'  # Update to exact Coverity project name
+     
 stages:
   - stage: CI
     displayName: 'Continuous Integration'
     jobs:
+      - job: CoverityScan
+        displayName: 'Coverity Static Analysis'
+        condition: and(succeeded(), eq(variables['EnableCoverityScan'], 'true'))
+        steps:
+          - template: .azure/templates/setup-node.yml
+
+          - script: |
+              set -euo pipefail
+              TOOL_ARCHIVE="coverity_tool.tgz"
+              echo "Downloading Coverity Scan CLI..."
+              curl -fsSL https://scan.coverity.com/download/linux64 \
+                --form token="$(COVERITY_SCAN_TOKEN)" \
+                --form project="$(COVERITY_SCAN_PROJECT)" \
+                -o "${TOOL_ARCHIVE}"
+
+              mkdir -p coverity_tool
+              tar -xzf "${TOOL_ARCHIVE}" --strip-components=1 -C coverity_tool
+            displayName: 'Download Coverity Scan CLI'
+            env:
+              COVERITY_SCAN_TOKEN: $(COVERITY_SCAN_TOKEN)
+              COVERITY_SCAN_PROJECT: $(COVERITY_SCAN_PROJECT)
+
+          - script: |
+              set -euo pipefail
+              export COVERITY_HOME="$(System.DefaultWorkingDirectory)/coverity_tool"
+              export PATH="$COVERITY_HOME/bin:$PATH"
+
+              echo "Capturing build with Coverity..."
+              cov-build --dir cov-int npm run build:ci
+
+              echo "Packaging Coverity intermediate directory..."
+              tar -czf cov-int.tgz cov-int
+            displayName: 'Capture build with Coverity'
+            env:
+              NEXT_TELEMETRY_DISABLED: 1
+
+          - script: |
+              set -euo pipefail
+              echo "Uploading analysis data to Coverity Scan..."
+              curl --progress-bar --fail \
+                --form token="$(COVERITY_SCAN_TOKEN)" \
+                --form email="$(COVERITY_SCAN_EMAIL)" \
+                --form file=@cov-int.tgz \
+                --form version="$(Build.BuildNumber)" \
+                --form description="Azure Pipeline build $(Build.BuildNumber) ($(Build.SourceBranchName))" \
+                https://scan.coverity.com/builds?project="$(COVERITY_SCAN_PROJECT)"
+            displayName: 'Upload results to Coverity Scan'
+            env:
+              COVERITY_SCAN_TOKEN: $(COVERITY_SCAN_TOKEN)
+              COVERITY_SCAN_EMAIL: $(COVERITY_SCAN_EMAIL)
+              COVERITY_SCAN_PROJECT: $(COVERITY_SCAN_PROJECT)
+
       - job: Lint
         displayName: 'Lint Code'
         steps:
@@ -136,13 +190,13 @@ stages:
                 - script: |
                     cd $(Pipeline.Workspace)/WebApp
                     echo "Configuring database connection..."
-                    {
-                      echo "DATABASE_URL=postgresql://$AZURE_POSTGRESQL_USER:$AZURE_POSTGRESQL_PASSWORD@$AZURE_POSTGRESQL_HOST:$AZURE_POSTGRESQL_PORT/$AZURE_POSTGRESQL_DATABASE?sslmode=require"
-                      echo "NODE_ENV=production"
-                      echo "PORT=8080"
-                      echo "HOSTNAME=0.0.0.0"
-                      echo "FINNHUB_API_KEY=$FINNHUB_API_KEY"
-                    } > .env
+                    # Use the helper script to build a properly encoded DATABASE_URL
+                    DATABASE_URL=$(node scripts/build-db-url.js)
+                    echo "DATABASE_URL=$DATABASE_URL" > .env
+                    echo "NODE_ENV=production" >> .env
+                    echo "PORT=8080" >> .env
+                    echo "HOSTNAME=0.0.0.0" >> .env
+                    echo "FINNHUB_API_KEY=$FINNHUB_API_KEY" >> .env
                     echo "Database configuration complete"
                     # NOTE: consider NOT deleting migrations in production (see notes below)
                     echo "Clearing existing migrations for provider switch..."
@@ -168,8 +222,5 @@ stages:
                     package: '$(Pipeline.Workspace)/WebApp'
                     runtimeStack: 'NODE|20-lts'
                     startUpCommand: 'npm start'
-                    appSettings: |
-                      -NODE_ENV production
-                      -PORT 8080
-                      -DATABASE_URL "postgresql://$(AZURE_POSTGRESQL_USER):$(AZURE_POSTGRESQL_PASSWORD)@$(AZURE_POSTGRESQL_HOST):$(AZURE_POSTGRESQL_PORT)/$(AZURE_POSTGRESQL_DATABASE)?sslmode=require"
-                      -FINNHUB_API_KEY "$(FINNHUB_API_KEY)"
+                    appSettings: '-NODE_ENV production -PORT 8080 -DATABASE_URL "$(ENCODED_DATABASE_URL)" -FINNHUB_API_KEY "$(FINNHUB_API_KEY)"'
+                  displayName: 'Deploy to Azure App Service'

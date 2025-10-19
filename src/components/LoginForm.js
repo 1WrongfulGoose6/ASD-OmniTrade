@@ -17,7 +17,7 @@ export default function LoginForm() {
       });
       const data = await res.json();
       if (!res.ok) return alert(data.error || "Login failed");
-      // uid cookie is set by the server on success
+      // session cookie is set by the server on success
       router.push("/confirmation?msg=Login%20successful!");
     } catch {
       alert("Network error");

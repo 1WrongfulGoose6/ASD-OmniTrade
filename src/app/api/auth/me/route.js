@@ -1,37 +1,27 @@
-// src/app/api/auth/me/route.js
 import { NextResponse } from "next/server";
-import { prisma } from "@/utils/prisma";
-import { getAuthPayload, requireUserId, verifyCsrf } from "@/utils/auth";
-import { encrypt, decrypt } from "@/utils/encryption";
-import logger from "@/utils/logger";
 import bcrypt from "bcryptjs";
+import { prisma } from "@/utils/prisma";
+import {
+  applySessionCookie,
+  createSessionToken,
+  getUserIdFromCookies,
+  getUserSession,
+} from "@/utils/auth";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 export async function GET() {
-  try {
-    const payload = await getAuthPayload();
-    if (!payload?.id) return NextResponse.json({ user: null }, { status: 200 });
+  const session = await getUserSession();
+  if (!session) return NextResponse.json({ user: null }, { status: 200 });
 
-    const user = await prisma.user.findUnique({
-      where: { id: payload.id },
-      select: { id: true, name: true, email: true, blacklisted: true },
-    });
+  const user = await prisma.user.findUnique({
+    where: { id: session.id },
+    select: { id: true, name: true, email: true, role: true, blacklisted: true },
+  });
 
-    if (!user || user.blacklisted) {
-      // Also clear the cookie if the user is blacklisted or not found
-      const res = NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-      res.cookies.delete("accessToken");
-      res.cookies.delete("csrf-token");
-      return res;
-    }
-
-    const responseUser = { ...user, name: user.name ? decrypt(user.name) : null };
-    return NextResponse.json({ user: responseUser });
-  } catch (e) {
-    logger.error({ err: e }, "[me GET] error");
-    return NextResponse.json({ error: "internal_error" }, { status: 500 });
+  if (!user || user.blacklisted) {
+    return NextResponse.json({ error: "This account has been blacklisted" }, { status: 403 });
   }
 }
 
@@ -54,10 +44,11 @@ export async function PUT(req) {
       return NextResponse.json({ error: "email already in use" }, { status: 409 });
     }
 
-    let update = { name: encrypt(name), email };
+    const update = { name, email };
 
     if (newPassword) {
-      const me = await prisma.user.findUnique({ where: { id: userId } });
+      const me = await prisma.user.findUnique({ where: { id: Number(uid) } });
+      if (!me) return NextResponse.json({ error: "user not found" }, { status: 404 });
       const match = await bcrypt.compare(currentPassword || "", me.passwordHash);
       if (!match) {
         return NextResponse.json({ error: "wrong current password" }, { status: 401 });
@@ -68,16 +59,15 @@ export async function PUT(req) {
     const updated = await prisma.user.update({
       where: { id: userId },
       data: update,
-      select: { id: true, name: true, email: true },
+      select: { id: true, name: true, email: true, role: true },
     });
 
-    const responseUser = { ...updated, name: updated.name ? decrypt(updated.name) : null };
-    return NextResponse.json({ user: responseUser });
-  } catch (e) {
-    logger.error({ err: e }, "[me PUT] error");
-    if (e.message.includes("csrf") || e.message.includes("unauthorized")) {
-      return NextResponse.json({ error: "unauthorized" }, { status: 401 });
-    }
-    return NextResponse.json({ error: "internal_error" }, { status: 500 });
+    const res = NextResponse.json({ user: updated });
+    const token = createSessionToken(updated);
+    applySessionCookie(res, token);
+    return res;
+  } catch {
+    return NextResponse.json({ error: "server error" }, { status: 500 });
   }
 }
+

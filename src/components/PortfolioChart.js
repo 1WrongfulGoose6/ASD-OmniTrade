@@ -1,39 +1,29 @@
 // src/components/PortfolioChart.js
 "use client";
 
-import { useState, useEffect } from "react";
+import React from "react";
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid, Label } from "recharts";
 
 
-export default function PortfolioChart() {
-  const [chartData, setChartData] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
+const RANGE_LABELS = {
+  "1h": "1-Hour Performance",
+  "24h": "24-Hour Performance",
+  "7d": "7-Day Performance",
+  "1m": "30-Day Performance",
+  YTD: "Year-to-Date Performance",
+  "1y": "1-Year Performance",
+};
 
-  useEffect(() => {
-    const fetchPortfolioHistory = async () => {
-      setLoading(true);
-      setError(null);
-      try {
-        const res = await fetch("/api/portfolio/history", { cache: "no-store" });
-        const data = await res.json();
-        
-        if (!res.ok) {
-          throw new Error(data?.error || `Server ${res.status}`);
-        }
-
-        setChartData(data.historicalData || []);
-      } catch (err) {
-        console.error("Failed to fetch portfolio history:", err);
-        setError(err.message || "Failed to load portfolio history");
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchPortfolioHistory();
-  }, []);
-
+export default function PortfolioChart({
+  data,
+  loading,
+  error,
+  range,
+  change,
+  changePercent,
+  currentValue,
+  firstHoldingTimestamp,
+}) {
   if (loading) {
     return (
       <div className="bg-white/90 w-full">
@@ -58,7 +48,7 @@ export default function PortfolioChart() {
     );
   }
 
-  if (!chartData || chartData.length === 0) {
+  if (!data || data.length === 0) {
     return (
       <div className="bg-white/90 w-full">
         <div className="flex gap-10">
@@ -91,44 +81,92 @@ export default function PortfolioChart() {
 
   // Calculate performance change for display
   const getPerformanceInfo = () => {
-    if (chartData.length < 2) return { change: 0, changePercent: 0, isPositive: true };
-    
-    const firstValue = chartData[0].price;
-    const lastValue = chartData[chartData.length - 1].price;
-    const change = lastValue - firstValue;
-    const changePercent = firstValue > 0 ? (change / firstValue) * 100 : 0;
-    
+    if (typeof change === "number" && typeof changePercent === "number") {
+      const status = change > 0 ? "positive" : change < 0 ? "negative" : "flat";
+      return {
+        change,
+        changePercent,
+        status,
+      };
+    }
+
+    if (!data || data.length < 2) {
+      return { change: 0, changePercent: 0, status: "flat" };
+    }
+
+    const firstValue = data[0].price;
+    const lastValue = data[data.length - 1].price;
+    const diff = lastValue - firstValue;
+    const pct = firstValue > 0 ? (diff / firstValue) * 100 : 0;
+
+    const status = diff > 0 ? "positive" : diff < 0 ? "negative" : "flat";
     return {
-      change,
-      changePercent,
-      isPositive: change >= 0
+      change: diff,
+      changePercent: pct,
+      status,
     };
   };
 
   const performance = getPerformanceInfo();
+  const summaryLabel = RANGE_LABELS[range] || "Performance";
+  const displayCurrentValue =
+    typeof currentValue === "number" && currentValue > 0
+      ? currentValue
+      : data[data.length - 1]?.price ?? 0;
+  const holdingStartLabel = firstHoldingTimestamp
+    ? new Date(firstHoldingTimestamp).toLocaleString("en-AU", {
+        year: "numeric",
+        month: "short",
+        day: "numeric",
+        hour: "numeric",
+        minute: "2-digit",
+      })
+    : null;
 
   return (
     <div className="w-full">
       {/* Performance Summary */}
       <div className="mb-4 flex items-center justify-between bg-gray-100 p-4 rounded-xl border border-gray-200">
         <div>
-          <h3 className="text-sm font-medium text-gray-700">30-Day Performance</h3>
+          <h3 className="text-sm font-medium text-gray-700">{summaryLabel}</h3>
           <div className="flex items-center gap-2 mt-1">
-            <span className={`text-lg font-semibold ${performance.isPositive ? 'text-emerald-600' : 'text-red-600'}`}>
-              {performance.isPositive ? '+' : ''}${Math.abs(performance.change).toFixed(2)}
+            <span
+              className={`text-lg font-semibold ${
+                performance.status === "positive"
+                  ? "text-emerald-600"
+                  : performance.status === "negative"
+                  ? "text-red-600"
+                  : "text-gray-900"
+              }`}
+            >
+              {performance.change > 0 ? "+" : performance.change < 0 ? "-" : ""}
+              ${Math.abs(performance.change).toFixed(2)}
             </span>
-            <span className={`text-sm ${performance.isPositive ? 'text-emerald-600' : 'text-red-600'}`}>
-              ({performance.isPositive ? '+' : ''}{performance.changePercent.toFixed(2)}%)
+            <span
+              className={`text-sm ${
+                performance.status === "positive"
+                  ? "text-emerald-600"
+                  : performance.status === "negative"
+                  ? "text-red-600"
+                  : "text-gray-700"
+              }`}
+            >
+              ({performance.changePercent > 0 ? "+" : performance.changePercent < 0 ? "-" : ""}
+              {Math.abs(performance.changePercent).toFixed(2)}%)
             </span>
           </div>
+          {holdingStartLabel && (
+            <p className="mt-1 text-xs text-gray-500">Tracking since {holdingStartLabel}</p>
+          )}
         </div>
         <div className="text-right">
           <div className="text-xs text-gray-500 uppercase tracking-wide">Current Value</div>
           <div className="text-lg font-semibold text-gray-800">
-            ${chartData.length > 0 ? chartData[chartData.length - 1].price.toLocaleString("en-AU", { 
-              minimumFractionDigits: 2, 
-              maximumFractionDigits: 2 
-            }) : '0.00'}
+            $
+            {displayCurrentValue.toLocaleString("en-AU", {
+              minimumFractionDigits: 2,
+              maximumFractionDigits: 2,
+            })}
           </div>
         </div>
       </div>
@@ -137,7 +175,7 @@ export default function PortfolioChart() {
       <div className="flex gap-10">
         <div className="flex-1 h-64 py-8 bg-gray-200 rounded-2xl overflow-hidden">
           <ResponsiveContainer width="100%" height="100%">
-            <LineChart data={chartData}>
+            <LineChart data={data}>
               <CartesianGrid stroke="#d1d5db" strokeDasharray="3 3" vertical={false} />
               <XAxis 
                 dataKey="time" 
@@ -177,3 +215,23 @@ export default function PortfolioChart() {
     </div>
   );
 }
+<<<<<<< HEAD
+=======
+
+PortfolioChart.propTypes = {
+  data: PropTypes.arrayOf(
+    PropTypes.shape({
+      time: PropTypes.string.isRequired,
+      price: PropTypes.number.isRequired,
+      timestamp: PropTypes.string,
+    })
+  ),
+  loading: PropTypes.bool,
+  error: PropTypes.string,
+  range: PropTypes.string,
+  change: PropTypes.number,
+  changePercent: PropTypes.number,
+  currentValue: PropTypes.number,
+  firstHoldingTimestamp: PropTypes.string,
+};
+>>>>>>> main

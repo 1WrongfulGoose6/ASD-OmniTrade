@@ -1,10 +1,12 @@
-import crypto from "crypto";
+// src/app/api/auth/login/route.js
 import { NextResponse } from "next/server";
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import { prisma } from "@/utils/prisma";
-import { decrypt } from "@/utils/encryption";
-import logger from "@/utils/logger";
+import {
+  applySessionCookie,
+  createSessionToken,
+} from "@/utils/auth";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -26,36 +28,10 @@ export async function POST(req) {
     const ok = await bcrypt.compare(String(password), user.passwordHash);
     if (!ok) return NextResponse.json({ error: "invalid credentials" }, { status: 401 });
 
-    const secret = process.env.JWT_SECRET;
-    if (!secret) {
-      logger.error("JWT_SECRET is not set");
-      return NextResponse.json({ error: "configuration_error" }, { status: 500 });
-    }
-
-    // Decrypt the user's name for use in the token and response
-    const responseUser = { ...user, name: user.name ? decrypt(user.name) : null };
-
-    const csrfToken = crypto.randomBytes(32).toString("hex");
-
-    const token = jwt.sign(
-      { id: responseUser.id, email: responseUser.email, name: responseUser.name, csrfToken },
-      secret,
-      { expiresIn: "1d" }
-    );
-
-    const res = NextResponse.json({ ok: true, user: { id: responseUser.id, email: responseUser.email, name: responseUser.name } });
-    res.cookies.set("accessToken", token, {
-      httpOnly: true,
-      sameSite: "strict",
-      secure: process.env.NODE_ENV === "production",
-      path: "/",
-    });
-    // Set the CSRF token in a separate, non-HttpOnly cookie for the client to read
-    res.cookies.set("csrf-token", csrfToken, {
-      sameSite: "strict",
-      secure: process.env.NODE_ENV === "production",
-      path: "/",
-    });
+    const payload = { id: user.id, email: user.email, name: user.name, role: user.role };
+    const res = NextResponse.json({ ok: true, user: payload });
+    const token = createSessionToken(payload);
+    applySessionCookie(res, token);
     return res;
   } catch (e) {
     logger.error({ err: e }, "[login] error");

@@ -1,8 +1,8 @@
 // src/app/api/trades/route.js
 import { NextResponse } from "next/server";
 import { prisma } from "@/utils/prisma";
-import { requireUserId, verifyCsrf } from "@/utils/auth";
-import logger from "@/utils/logger";
+import { getUserIdFromCookies } from "@/utils/auth";
+import { getCashBalance } from "@/lib/server/portfolio";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -37,6 +37,64 @@ export async function GET(request) {
 }
 
 export async function POST(request) {
+  const userId = await getUserIdFromCookies();
+  if (!userId) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
+
+  const body = await request.json();
+  let { symbol, side, qty, price, status = "FILLED" } = body || {};
+  if (!symbol || !side || !qty || !price) {
+    return NextResponse.json({ error: "symbol, side, qty, price required" }, { status: 400 });
+  }
+
+  symbol = String(symbol).toUpperCase();
+  side = side === "SELL" ? "SELL" : "BUY";
+  qty = Number(qty);
+  price = Number(price);
+
+  if (qty <= 0 || price <= 0) {
+    return NextResponse.json({ error: "Quantity and price must be greater than 0" }, { status: 400 });
+  }
+
+  if (side === "BUY") {
+    const { availableCash } = await getCashBalance(userId);
+    const totalCost = qty * price;
+
+    if (totalCost > availableCash) {
+      return NextResponse.json(
+        { error: `Insufficient funds. Available cash: ${availableCash.toFixed(2)} AUD` },
+        { status: 400 }
+      );
+    }
+  }
+
+
+  if (side === "SELL") {
+    const trades = await prisma.trade.findMany({ where: { userId, symbol } });
+    let ownedShares = 0;
+    for (const t of trades) {
+      ownedShares += t.side === "BUY" ? t.qty : -t.qty;
+    }
+    if (qty > ownedShares) {
+      return NextResponse.json(
+        { error: `Not enough shares to sell. Owned: ${ownedShares}` },
+        { status: 400 }
+      );
+    }
+  }
+
+
+  const trade = await prisma.trade.create({
+    data: {
+      userId: Number(userId),
+      symbol,
+      side,
+      qty,
+      price,
+      status,
+    },
+  });
+
+  // 2) Mirror to TradeBacklog (best-effort)
   try {
     await verifyCsrf(request.headers);
     const userId = await requireUserId();
@@ -121,4 +179,10 @@ export async function POST(request) {
     }
     return NextResponse.json({ error: "internal_error" }, { status: 500 });
   }
+<<<<<<< HEAD
 }
+=======
+
+  return NextResponse.json({ ok: true, trade }, { status: 200 });
+}
+>>>>>>> main

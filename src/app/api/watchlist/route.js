@@ -1,8 +1,10 @@
 // src/app/api/watchlist/route.js
 import { NextResponse } from "next/server";
-import { prisma } from "@/utils/prisma";
-import { requireUserId } from "@/utils/auth";
-import logger from "@/utils/logger";
+import { getUserIdFromCookies } from "@/utils/auth";
+import { getWatchlistWithQuotes } from "@/lib/server/watchlist";
+
+export const runtime = "nodejs";
+export const dynamic = "force-dynamic";
 
 // GET /api/watchlist  -> current user's watchlist + lightweight quotes
 export async function GET() {
@@ -23,4 +25,8 @@ export async function GET() {
     }
     return NextResponse.json({ error: "internal_error" }, { status: 500 });
   }
+
+  const items = await getWatchlistWithQuotes(userId);
+
+  return NextResponse.json({ items });
 }

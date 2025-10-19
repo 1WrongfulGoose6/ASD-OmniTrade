@@ -1,11 +1,14 @@
 // src/app/api/admin/users/[id]/route.js
 import { NextResponse } from 'next/server';
 import { prisma } from '@/utils/prisma';
-import { requireUserId, verifyCsrf } from '@/utils/auth';
-import { encrypt, decrypt } from '@/utils/encryption';
-import logger from '@/utils/logger';
+import { getUserSession } from '@/utils/auth';
 
-// TODO: All handlers in this file need a real admin authorization check.
+async function requireAdmin() {
+  const session = await getUserSession();
+  if (!session) return { error: 'not authenticated', code: 401 };
+  if (session.role !== 'ADMIN') return { error: 'forbidden', code: 403 };
+  return { ok: true, id: session.id };
+}
 
 // GET one user by id
 export async function GET(req, { params }) {

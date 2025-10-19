@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { verifyJWT } from '@/lib/verifyJWT';
+import { SESSION_COOKIE_NAME } from '@/utils/auth';
 
 export async function middleware(request) {
     const { pathname } = request.nextUrl;
@@ -11,11 +12,13 @@ export async function middleware(request) {
     const isProtected = protectedRoutes.some(route => pathname.startsWith(route));
     if (!isProtected) return NextResponse.next();
 
-    // Retrieve JWT token (you can adjust depending on your setup)
-    const token = request.cookies.get('api_key')?.value || request.headers.get('authorization')?.replace('Bearer ', '');
+    // Retrieve JWT token
+    const token =
+        request.cookies.get(SESSION_COOKIE_NAME)?.value ||
+        request.headers.get('authorization')?.replace('Bearer ', '');
 
     // Secret key from environment variable
-    const secret = process.env.JWT_SECRET_KEY;
+    const secret = process.env.AUTH_SECRET || process.env.JWT_SECRET_KEY;
     if (!secret) {
         console.error('Missing JWT_SECRET_KEY in environment variables');
         return NextResponse.json({ error: 'Server misconfiguration' }, { status: 500 });

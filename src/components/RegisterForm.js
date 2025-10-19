@@ -18,7 +18,7 @@ export default function RegisterForm() {
       });
       const data = await res.json();
       if (!res.ok) return alert(data.error || "Registration failed");
-      // uid cookie is set by the server on success
+      // session cookie is set by the server on success
       router.push("/confirmation?msg=Registration%20complete!");
     } catch {
       alert("Network error");

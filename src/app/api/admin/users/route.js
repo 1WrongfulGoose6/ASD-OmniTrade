@@ -1,14 +1,18 @@
 // src/app/api/admin/users/route.js
 import { NextResponse } from 'next/server';
 import { prisma } from '@/utils/prisma';
-import { requireUserId } from '@/utils/auth';
-import { decrypt } from '@/utils/encryption';
-import logger from '@/utils/logger';
+import { getUserSession } from '@/utils/auth';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 
-// GET /api/admin/users - list all users
+async function requireAdmin() {
+  const session = await getUserSession();
+  if (!session) return { error: 'not authenticated', code: 401 };
+  if (session.role !== 'ADMIN') return { error: 'forbidden', code: 403 };
+  return { ok: true, id: session.id };
+}
+
 export async function GET() {
   try {
     // TODO: This needs a real admin check. Currently allows any logged-in user.

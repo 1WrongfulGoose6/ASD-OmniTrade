@@ -20,6 +20,7 @@ export default function LoginForm() {
       const data = await res.json();
       if (!res.ok) return alert(data.error || "Login failed");
       // session cookie is set by the server on success
+      window.dispatchEvent(new Event("auth:changed"));
       router.push("/confirmation?msg=Login%20successful!");
     } catch {
       alert("Network error");

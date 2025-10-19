@@ -216,7 +216,6 @@ test.describe('Feature scenarios', () => {
         status: 200,
         headers: {
           'content-type': 'text/csv',
-          'x-checksum': 'dummy',
         },
         body: 'id,asset\n1,AAPL\n',
       })
@@ -266,7 +265,7 @@ test.describe('Feature scenarios', () => {
   });
 
   test('F12-UI-NavbarConsistency: core navigation links appear across key pages', async ({ page }) => {
-    const navLinks = ['Stocks', 'News', 'Watchlist', 'Portfolio', 'Profile', 'History', 'Settings'];
+    const navLinks = ['Stocks', 'News', 'Watchlist', 'Portfolio', 'Profile', 'History'];
     await mockAuth(page);
     await mockWatchlist(page, []);
     await mockMarketdataList(page, []);

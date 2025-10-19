@@ -3,12 +3,17 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/utils/prisma";
 import { getUserIdFromCookies } from "@/utils/auth";
 import { getCashBalance } from "@/lib/server/portfolio";
+import { validateRequestCsrf } from "@/utils/csrf";
+import { auditLog, errorLog } from "@/utils/logger";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 export async function POST(req) {
   try {
+    const csrfFailure = validateRequestCsrf(req);
+    if (csrfFailure) return csrfFailure;
+
     const userId = await getUserIdFromCookies();
     if (!userId) {
       return NextResponse.json({ error: "unauthorized" }, { status: 401 });
@@ -40,16 +45,19 @@ export async function POST(req) {
       },
     });
 
+    auditLog("cash.withdrawal", userId, { amount });
+
     return NextResponse.json({ ...withdrawalRecord, amount: -Math.abs(amount) });
   } catch (err) {
-    console.error("[withdraw POST] error", err);
+    errorLog("cash.withdrawal.failed", err);
     return NextResponse.json({ error: err.message }, { status: 500 });
   }
 }
 
 export async function GET() {
+  let userId;
   try {
-    const userId = await getUserIdFromCookies();
+    userId = await getUserIdFromCookies();
     if (!userId) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
 
     // Fetch withdrawals (supporting legacy negative entries)
@@ -72,7 +80,7 @@ export async function GET() {
 
     return NextResponse.json({ withdrawals: normalized }, { status: 200 });
   } catch (e) {
-    console.error("[withdraw GET] error", e);
+    errorLog("cash.withdrawal.list.failed", e, { userId });
     return NextResponse.json({ error: "internal_error" }, { status: 500 });
   }
 }

@@ -4,6 +4,7 @@
 import React from 'react';
 import PropTypes from 'prop-types';
 import { Star } from 'lucide-react';
+import { csrfFetch } from '@/lib/csrfClient';
 
 async function fetchWatchlist() {
   const res = await fetch('/api/watchlist', { cache: 'no-store' });
@@ -33,7 +34,7 @@ export default function WatchStar({ symbol, name }) {
     setWatched(v => !v); // optimistic
     setBusy(true);
     try {
-      const res = await fetch('/api/watchlist/toggle', {
+      const res = await csrfFetch('/api/watchlist/toggle', {
         method: 'POST',
         headers: { 'content-type': 'application/json' },
         body: JSON.stringify({ symbol: sym, name }),

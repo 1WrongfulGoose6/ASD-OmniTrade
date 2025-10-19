@@ -9,10 +9,22 @@ function createHeaders(init = {}) {
   };
 }
 
-export function createJsonRequest(url, body = {}, headers = {}) {
+function createCookies(init = {}) {
+  const store = new Map(Object.entries(init));
+  return {
+    get(name) {
+      if (!store.has(name)) return undefined;
+      return { name, value: store.get(name) };
+    },
+  };
+}
+
+export function createJsonRequest(url, body = {}, { headers = {}, cookies = {}, method = "POST" } = {}) {
   return {
     url,
+    method,
     headers: createHeaders(headers),
+    cookies: createCookies(cookies),
     async json() {
       return body;
     },
@@ -22,6 +34,8 @@ export function createJsonRequest(url, body = {}, headers = {}) {
 export function createGetRequest(url, headers = {}) {
   return {
     url,
+    method: "GET",
     headers: createHeaders(headers),
+    cookies: createCookies({}),
   };
 }

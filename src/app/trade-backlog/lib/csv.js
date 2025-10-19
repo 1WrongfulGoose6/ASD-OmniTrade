@@ -1,19 +1,21 @@
+function sanitiseCell(value) {
+  if (value == null) return '';
+  const stringValue = String(value);
+  const trimmedStart = stringValue.trimStart();
+  const needsQuotePrefix = /^[=+\-@]/.test(trimmedStart);
+  const safeValue = needsQuotePrefix ? `'${stringValue}` : stringValue;
+  if (/[",\n]/.test(safeValue)) {
+    return `"${safeValue.replace(/"/g, '""')}"`;
+  }
+  return safeValue;
+}
+
 export function convertToCSV(data) {
   if (!Array.isArray(data) || data.length === 0) return '';
   const headers = Object.keys(data[0]);
   const headerRow = headers.join(',');
   const dataRows = data.map((row) =>
-    headers
-      .map((field) => {
-        let value = row[field];
-        if (value == null) return '';
-        const stringValue = String(value);
-        if (/[",\n]/.test(stringValue)) {
-          return `"${stringValue.replace(/"/g, '""')}"`;
-        }
-        return stringValue;
-      })
-      .join(','),
+    headers.map((field) => sanitiseCell(row[field])).join(',')
   );
   return [headerRow, ...dataRows].join('\n');
 }

@@ -20,6 +20,16 @@ const { getCashBalance } = require('@/lib/server/portfolio');
 const { POST: depositPost } = require('@/app/api/deposit/route');
 const { POST: withdrawPost } = require('@/app/api/withdraw/route');
 const { createJsonRequest } = require('@/test-utils/request');
+const { CSRF_COOKIE_NAME } = require('@/utils/csrf');
+
+function csrfOptions(method = 'POST') {
+  const token = 'test-csrf';
+  return {
+    method,
+    headers: { 'x-csrf-token': token },
+    cookies: { [CSRF_COOKIE_NAME]: token },
+  };
+}
 
 describe('Cash flow routes', () => {
   beforeEach(() => {
@@ -31,7 +41,11 @@ describe('Cash flow routes', () => {
     const now = new Date().toISOString();
     prisma.deposit.create.mockResolvedValue({ id: 1, amount: 250, createdAt: now });
 
-    const req = createJsonRequest('http://localhost/api/deposit', { amount: 250 });
+    const req = createJsonRequest(
+      'http://localhost/api/deposit',
+      { amount: 250 },
+      csrfOptions()
+    );
 
     const res = await depositPost(req);
     expect(res.status).toBe(200);
@@ -45,7 +59,11 @@ describe('Cash flow routes', () => {
   it('prevents withdrawals that exceed balance (F05-API-WithdrawInsufficient)', async () => {
     getCashBalance.mockResolvedValue({ availableCash: 100 });
 
-    const req = createJsonRequest('http://localhost/api/withdraw', { amount: 150 });
+    const req = createJsonRequest(
+      'http://localhost/api/withdraw',
+      { amount: 150 },
+      csrfOptions()
+    );
 
     const res = await withdrawPost(req);
     expect(res.status).toBe(400);
@@ -59,7 +77,11 @@ describe('Cash flow routes', () => {
     const record = { id: 10, amount: 200, kind: 'WITHDRAW', createdAt: new Date().toISOString() };
     prisma.deposit.create.mockResolvedValue(record);
 
-    const req = createJsonRequest('http://localhost/api/withdraw', { amount: 200 });
+    const req = createJsonRequest(
+      'http://localhost/api/withdraw',
+      { amount: 200 },
+      csrfOptions()
+    );
 
     const res = await withdrawPost(req);
     expect(res.status).toBe(200);
@@ -72,7 +94,11 @@ describe('Cash flow routes', () => {
 
   it('rejects unauthenticated access', async () => {
     getUserIdFromCookies.mockResolvedValueOnce(null);
-    const req = createJsonRequest('http://localhost/api/deposit', { amount: 1 });
+    const req = createJsonRequest(
+      'http://localhost/api/deposit',
+      { amount: 1 },
+      csrfOptions()
+    );
     const res = await depositPost(req);
     expect(res.status).toBe(401);
   });

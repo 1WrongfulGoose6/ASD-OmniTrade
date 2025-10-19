@@ -1,6 +1,7 @@
 // src/app/api/marketdata/route.js
 import { NextResponse } from "next/server";
 import { getQuotes, POPULAR_SYMBOLS } from "@/lib/market/quotes";
+import { errorLog } from "@/utils/logger";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -21,7 +22,7 @@ export async function GET(request) {
 
     return NextResponse.json(rows, { status: 200 });
   } catch (e) {
-    console.error("[marketdata] error", e);
+    errorLog("marketdata.fetch.failed", e);
     return NextResponse.json({ error: "failed_to_fetch_quotes" }, { status: 500 });
   }
 }

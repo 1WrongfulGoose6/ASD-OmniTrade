@@ -3,6 +3,7 @@
 import React from 'react';
 import NavBar from '@/components/NavBar';
 import { useRouter } from 'next/navigation';
+import { csrfFetch } from '@/lib/csrfClient';
 
 export default function BlacklistPage() {
   // state for user list, loading, and errors
@@ -95,11 +96,11 @@ export default function BlacklistPage() {
                         {/* remove user from blacklist */}
                         <button
                           onClick={async () => {
-                            const res = await fetch(`/api/admin/users/${user.id}`, {
-                              method: 'PATCH',
-                              headers: { 'Content-Type': 'application/json' },
-                              body: JSON.stringify({ blacklisted: false }),
-                            });
+                        const res = await csrfFetch(`/api/admin/users/${user.id}`, {
+                          method: 'PATCH',
+                          headers: { 'Content-Type': 'application/json' },
+                          body: JSON.stringify({ blacklisted: false }),
+                        });
                             if (!res.ok) return alert('Failed to remove from blacklist');
                             setUsers(u => u.filter(x => x.id !== user.id));
                           }}

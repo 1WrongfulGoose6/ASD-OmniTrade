@@ -2,6 +2,8 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/utils/prisma';
 import { getUserSession } from '@/utils/auth';
+import { decryptField, encryptField } from '@/utils/encryption';
+import { validateRequestCsrf } from '@/utils/csrf';
 
 async function requireAdmin() {
   const session = await getUserSession();
@@ -22,7 +24,12 @@ export async function GET(req, { params }) {
       select: { id: true, name: true, email: true, createdAt: true }
     });
     if (!user) return NextResponse.json({ error: 'not found' }, { status: 404 });
-    return NextResponse.json({ user });
+    return NextResponse.json({
+      user: {
+        ...user,
+        name: decryptField(user.name),
+      },
+    });
   } catch (e) {
     return NextResponse.json({ error: e.message }, { status: 500 });
   }
@@ -31,6 +38,9 @@ export async function GET(req, { params }) {
 // UPDATE user by id
 export async function PUT(req, { params }) {
   try {
+    const csrfFailure = validateRequestCsrf(req);
+    if (csrfFailure) return csrfFailure;
+
     const auth = await requireAdmin();
     if (!auth.ok) return NextResponse.json({ error: auth.error }, { status: auth.code });
 
@@ -47,7 +57,7 @@ export async function PUT(req, { params }) {
       return NextResponse.json({ error: 'email already used' }, { status: 409 });
     }
 
-    const data = { name, email };
+    const data = { name: encryptField(name), email };
 
     const updated = await prisma.user.update({
       where: { id },
@@ -55,7 +65,12 @@ export async function PUT(req, { params }) {
       select: { id: true, name: true, email: true },
     });
 
-    return NextResponse.json({ user: updated });
+    return NextResponse.json({
+      user: {
+        ...updated,
+        name: decryptField(updated.name),
+      },
+    });
   } catch (e) {
     return NextResponse.json({ error: e.message }, { status: 500 });
   }
@@ -64,6 +79,9 @@ export async function PUT(req, { params }) {
 // DELETE user by id
 export async function DELETE(req, { params }) {
   try {
+    const csrfFailure = validateRequestCsrf(req);
+    if (csrfFailure) return csrfFailure;
+
     const auth = await requireAdmin();
     if (!auth.ok) return NextResponse.json({ error: auth.error }, { status: auth.code });
 
@@ -78,6 +96,9 @@ export async function DELETE(req, { params }) {
 // BLACKLIST user
 export async function PATCH(req, { params }) {
   try {
+    const csrfFailure = validateRequestCsrf(req);
+    if (csrfFailure) return csrfFailure;
+
     const auth = await requireAdmin();
     if (!auth.ok) return NextResponse.json({ error: auth.error }, { status: auth.code });
 
@@ -91,7 +112,12 @@ export async function PATCH(req, { params }) {
       select: { id: true, name: true, email: true, blacklisted: true, createdAt: true },
     });
 
-    return NextResponse.json({ user: updated });
+    return NextResponse.json({
+      user: {
+        ...updated,
+        name: decryptField(updated.name),
+      },
+    });
   } catch (e) {
     return NextResponse.json({ error: e.message }, { status: 500 });
   }

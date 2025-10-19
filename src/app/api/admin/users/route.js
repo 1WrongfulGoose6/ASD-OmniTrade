@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/utils/prisma';
 import { getUserSession } from '@/utils/auth';
+import { decryptField } from '@/utils/encryption';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -22,7 +23,12 @@ export async function GET() {
       orderBy: { id: 'asc' },
     });
 
-    return NextResponse.json({ users });
+    const sanitized = users.map((user) => ({
+      ...user,
+      name: decryptField(user.name),
+    }));
+
+    return NextResponse.json({ users: sanitized });
   } catch (e) {
     return NextResponse.json({ error: e.message || 'server error' }, { status: 500 });
   }

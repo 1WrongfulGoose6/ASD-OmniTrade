@@ -16,6 +16,20 @@ describe('convertToCSV helper (F09-Unit-CSVFormatter)', () => {
     expect(csv).toContain('4,"N""VDA","quotes ""inside"""');
   });
 
+  it('sanitises potentially dangerous spreadsheet values', () => {
+    const rows = [
+      { id: 1, asset: 'AAPL', note: '=HYPERLINK("http://evil.com")' },
+      { id: 2, asset: 'MSFT', note: '  -Totals' },
+      { id: 3, asset: 'GOOGL', note: '+SUM(A:A)' },
+    ];
+
+    const csv = convertToCSV(rows);
+    const lines = csv.split('\n');
+    expect(lines[1]).toContain("'=HYPERLINK");
+    expect(lines[2]).toContain("'  -Totals");
+    expect(lines[3]).toContain("'+SUM(A:A)");
+  });
+
   it('returns empty string for empty inputs', () => {
     expect(convertToCSV([])).toBe('');
     expect(convertToCSV(null)).toBe('');

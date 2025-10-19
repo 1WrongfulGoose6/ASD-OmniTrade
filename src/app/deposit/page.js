@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import NavBar from "@/components/NavBar";
 import WaveBackground from "@/components/WaveBackground";
 import Image from "next/image";
+import { csrfFetch } from "@/lib/csrfClient";
 
 export default function DepositPage() {
   const [amount, setAmount] = useState("");
@@ -71,7 +72,7 @@ export default function DepositPage() {
 
     setBusy(true);
     try {
-      const res = await fetch("/api/deposit", {
+      const res = await csrfFetch("/api/deposit", {
         method: "POST",
         headers: { "content-type": "application/json" },
         body: JSON.stringify({ amount: Number(amount) }),

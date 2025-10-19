@@ -4,6 +4,7 @@ import React from 'react';
 import NavBar from '@/components/NavBar';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
+import { csrfFetch } from '@/lib/csrfClient';
 
 export default function ManageUsersPage() {
   //hold user list
@@ -106,7 +107,7 @@ export default function ManageUsersPage() {
                             <button
                             onClick={async () => {
                                 if (!confirm('Delete user?')) return;
-                                const res = await fetch(`/api/admin/users/${user.id}`, { method: 'DELETE' });
+                                const res = await csrfFetch(`/api/admin/users/${user.id}`, { method: 'DELETE' });
                                 if (!res.ok) return alert('Delete failed');
                                 setUsers(u => u.filter(x => x.id !== user.id));
                             }}
@@ -119,7 +120,7 @@ export default function ManageUsersPage() {
                             {/*blacklist user*/}
                             <button
                             onClick={async () => {
-                                const res = await fetch(`/api/admin/users/${user.id}`, {
+                                const res = await csrfFetch(`/api/admin/users/${user.id}`, {
                                 method: 'PATCH',
                                 headers: { 'Content-Type': 'application/json' },
                                 body: JSON.stringify({ blacklisted: true }),

@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import NavBar from '@/components/NavBar';
 import { useRouter } from 'next/navigation';
+import { csrfFetch } from '@/lib/csrfClient';
 
 export default function EditProfilePage() {
   const [loading, setLoading] = useState(true);
@@ -77,7 +78,7 @@ export default function EditProfilePage() {
       if (showPasswordFields) payload.currentPassword = currentPassword;
       if (showPasswordFields) payload.newPassword = newPassword;
 
-      const res = await fetch('/api/auth/me', {
+      const res = await csrfFetch('/api/auth/me', {
         method: 'PUT',
         headers: { 'content-type': 'application/json' },
         body: JSON.stringify(payload),

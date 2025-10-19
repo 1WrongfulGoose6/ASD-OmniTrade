@@ -1,3 +1,5 @@
+/* eslint-env jest */
+const { beforeAll, afterAll } = require('@jest/globals');
 jest.mock('@/lib/mcache', () => ({
   fetchJsonCached: jest.fn(),
 }));

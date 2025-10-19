@@ -7,6 +7,11 @@ import {
   getUserIdFromCookies,
   getUserSession,
 } from "@/utils/auth";
+import {
+  issueNewCsrfToken,
+  validateRequestCsrf,
+} from "@/utils/csrf";
+import { decryptField, encryptField } from "@/utils/encryption";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -24,12 +29,20 @@ export async function GET() {
     return NextResponse.json({ error: "This account has been blacklisted" }, { status: 403 });
   }
 
-  return NextResponse.json({ user });
+  return NextResponse.json({
+    user: {
+      ...user,
+      name: decryptField(user.name),
+    },
+  });
 }
 
 // PUT update current user profile (name + email)
 export async function PUT(req) {
   try {
+    const csrfFailure = validateRequestCsrf(req);
+    if (csrfFailure) return csrfFailure;
+
     const uid = await getUserIdFromCookies();
     if (!uid) return NextResponse.json({ error: "not logged in" }, { status: 401 });
 
@@ -46,7 +59,7 @@ export async function PUT(req) {
       return NextResponse.json({ error: "email already in use" }, { status: 409 });
     }
 
-    const update = { name, email };
+    const update = { name: encryptField(name), email };
 
     if (newPassword) {
       const me = await prisma.user.findUnique({ where: { id: Number(uid) } });
@@ -64,12 +77,19 @@ export async function PUT(req) {
       select: { id: true, name: true, email: true, role: true },
     });
 
-    const res = NextResponse.json({ user: updated });
+    const responseBody = {
+      user: {
+        ...updated,
+        name: decryptField(updated.name),
+      },
+    };
+
+    const res = NextResponse.json(responseBody);
     const token = createSessionToken(updated);
     applySessionCookie(res, token);
+    issueNewCsrfToken(res);
     return res;
   } catch {
     return NextResponse.json({ error: "server error" }, { status: 500 });
   }
 }
-

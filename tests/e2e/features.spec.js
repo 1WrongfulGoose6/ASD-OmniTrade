@@ -52,18 +52,20 @@ test.describe('Feature scenarios', () => {
       route.fulfill(jsonResponse({ ok: true, trade: { id: 123 } }));
     });
 
-    const dialogs = [];
-    page.on('dialog', (dialog) => {
-      dialogs.push(dialog.message());
-      dialog.accept();
-    });
+    // const dialogs = [];
+    // page.on('dialog', (dialog) => {
+    //   dialogs.push(dialog.message());
+    //   dialog.accept();
+    // });
 
     await page.goto('/trade?symbol=AAPL&price=120');
     await page.getByPlaceholder('e.g. 1.5').fill('2');
     await page.getByRole('button', { name: 'Place Buy Order' }).click();
 
-    await expect.poll(() => dialogs.length).toBe(1);
-    expect(dialogs[0]).toContain('Trade submitted');
+    /*await expect.poll(() => dialogs.length).toBe(1);
+    expect(dialogs[0]).toContain('Trade submitted');*/
+
+    await expect(page.getByText(/Trade submitted/)).toBeVisible();
     expect(capturedPayload).toMatchObject({
       symbol: 'AAPL',
       side: 'BUY',

@@ -18,6 +18,7 @@ const VARIANT_STYLES = {
   info: 'border-blue-100 bg-white/95',
 };
 
+// Renders the live toast stack without blocking click-through on the page.
 function ToastViewport({ toasts, dismiss }) {
   if (toasts.length === 0) return null;
   return (
@@ -60,6 +61,7 @@ ToastViewport.propTypes = {
   dismiss: PropTypes.func.isRequired,
 };
 
+// Lightweight confirm modal we can await via toast.confirm().
 function ConfirmDialog({ state, onDecision }) {
   if (!state) return null;
   const tone =
@@ -112,6 +114,7 @@ export function ToastProvider({ children }) {
     setToasts((prev) => prev.filter((toast) => toast.id !== id));
   }, []);
 
+  // Store toast metadata and auto-dismiss after a short TTL.
   const pushToast = React.useCallback(({ title, message, variant }) => {
     const id = `${Date.now()}-${Math.random().toString(16).slice(2)}`;
     setToasts((prev) => [...prev, { id, title, message, variant }]);

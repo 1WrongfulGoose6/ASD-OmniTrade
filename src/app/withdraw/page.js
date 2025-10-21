@@ -6,6 +6,7 @@ import NavBar from "@/components/NavBar";
 import WaveBackground from "@/components/WaveBackground";
 import Image from "next/image";
 import { csrfFetch } from "@/lib/csrfClient";
+import { useToast } from "@/components/providers/ToastProvider";
 
 export default function WithdrawPage() {
   const [amount, setAmount] = useState("");
@@ -16,6 +17,7 @@ export default function WithdrawPage() {
   const [busy, setBusy] = useState(false);
   const [showPopup, setShowPopup] = useState(false);
   const router = useRouter();
+  const toast = useToast();
 
   const detectCardType = (num) => {
     if (num.startsWith("4")) return "visa";
@@ -80,7 +82,7 @@ export default function WithdrawPage() {
 
       if (!res.ok) {
         if (res.status === 401) {
-          alert("Please log in to withdraw.");
+          toast.error("Please log in to withdraw.");
           return;
         }
         throw new Error(payload?.error || `Withdrawal failed (${res.status})`);
@@ -93,7 +95,7 @@ export default function WithdrawPage() {
         router.push("/portfolio");
       }, 1200);
     } catch (err) {
-      alert(err.message || "Network error");
+      toast.error(err.message || "Network error. Please try again.");
     } finally {
       setBusy(false);
     }

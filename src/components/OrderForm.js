@@ -4,6 +4,7 @@
 import React, { useState } from "react";
 import PropTypes from "prop-types";
 import { csrfFetch } from "@/lib/csrfClient";
+import { useToast } from "@/components/providers/ToastProvider";
 
 function toNum(v) {
   if (typeof v === "number") return Number.isFinite(v) ? v : null;
@@ -23,14 +24,19 @@ export default function OrderForm({ symbol, price }) {
   const [stopLoss, setStopLoss] = useState("");
   const [takeProfit, setTakeProfit] = useState("");
   const [busy, setBusy] = useState(false);
+  const toast = useToast();
 
   async function handleSubmit(e) {
     e.preventDefault();
-    if (!symbol) return alert("No symbol selected");
+    if (!symbol) {
+      toast.error("Select a symbol before placing an order.");
+      return;
+    }
 
     const shares = Number(quantity);
     if (!Number.isFinite(shares) || shares <= 0) {
-      return alert("Enter a valid share quantity");
+      toast.error("Enter a valid share quantity.");
+      return;
     }
 
     // Market order uses the current price prop; Limit uses the limitPrice input
@@ -39,7 +45,8 @@ export default function OrderForm({ symbol, price }) {
     const execPrice = orderType === "Limit" ? limit : marketPrice;
 
     if (!execPrice || execPrice <= 0) {
-      return alert("Invalid price");
+      toast.error("Enter a valid price.");
+      return;
     }
 
     setBusy(true);
@@ -56,15 +63,19 @@ export default function OrderForm({ symbol, price }) {
       });
       const data = await res.json();
       if (!res.ok) {
-        if (res.status === 401) return alert("Please log in to place trades.");
-        return alert(data.error || "Trade failed");
+        if (res.status === 401) {
+          toast.error("Please log in to place trades.");
+          return;
+        }
+        toast.error(data.error || "Trade failed.");
+        return;
       }
       // success
       setQuantity("");
       setLimitPrice("");
-      alert(`Trade submitted: ${side} ${shares} ${symbol} @ ${execPrice}`);
+      toast.success(`Trade submitted: ${side} ${shares} ${symbol} @ ${execPrice}`);
     } catch {
-      alert("Network error");
+      toast.error("Network error. Please try again.");
     } finally {
       setBusy(false);
     }

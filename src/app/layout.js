@@ -3,6 +3,7 @@ import PropTypes from "prop-types";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { AuthProvider } from "@/components/providers/AuthProvider";
+import { ToastProvider } from "@/components/providers/ToastProvider";
 import { getCurrentUser } from "@/lib/server/currentUser";
 
 const geistSans = Geist({
@@ -70,9 +71,11 @@ export default async function RootLayout({ children }) {
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
-        <AuthProvider initialUser={currentUser}>
-          {children}
-        </AuthProvider>
+        <ToastProvider>
+          <AuthProvider initialUser={currentUser}>
+            {children}
+          </AuthProvider>
+        </ToastProvider>
       </body>
     </html>
   );

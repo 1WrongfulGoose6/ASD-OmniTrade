@@ -5,6 +5,7 @@ import NavBar from '@/components/NavBar';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { csrfFetch } from '@/lib/csrfClient';
+import { useToast } from '@/components/providers/ToastProvider';
 
 export default function ManageUsersPage() {
   //hold user list
@@ -12,6 +13,7 @@ export default function ManageUsersPage() {
   const [loading, setLoading] = React.useState(true);
   const [error, setError] = React.useState(null);
   const router = useRouter();
+  const toast = useToast();
 
   //prevents non admins from accessing restricted pages
   React.useEffect(() => {
@@ -106,10 +108,24 @@ export default function ManageUsersPage() {
                             {/*delete user*/}
                             <button
                             onClick={async () => {
-                                if (!confirm('Delete user?')) return;
-                                const res = await csrfFetch(`/api/admin/users/${user.id}`, { method: 'DELETE' });
-                                if (!res.ok) return alert('Delete failed');
-                                setUsers(u => u.filter(x => x.id !== user.id));
+                                const confirmed = await toast.confirm({
+                                  title: 'Delete user',
+                                  message: `Are you sure you want to delete ${user.email}?`,
+                                  confirmLabel: 'Delete',
+                                  tone: 'danger',
+                                });
+                                if (!confirmed) return;
+                                try {
+                                  const res = await csrfFetch(`/api/admin/users/${user.id}`, { method: 'DELETE' });
+                                  if (!res.ok) {
+                                    toast.error('Failed to delete user.');
+                                    return;
+                                  }
+                                  setUsers(u => u.filter(x => x.id !== user.id));
+                                  toast.success('User deleted.');
+                                } catch (e) {
+                                  toast.error(e.message || 'Failed to delete user.');
+                                }
                             }}
                             className="rounded-full bg-red-600 px-3 py-1 text-xs font-medium text-white shadow hover:bg-red-700 transition cursor-pointer"
                             >
@@ -120,13 +136,21 @@ export default function ManageUsersPage() {
                             {/*blacklist user*/}
                             <button
                             onClick={async () => {
-                                const res = await csrfFetch(`/api/admin/users/${user.id}`, {
-                                method: 'PATCH',
-                                headers: { 'Content-Type': 'application/json' },
-                                body: JSON.stringify({ blacklisted: true }),
-                                });
-                                if (!res.ok) return alert('Failed to blacklist');
-                                setUsers(u => u.filter(x => x.id !== user.id)); // remove from current list
+                                try {
+                                  const res = await csrfFetch(`/api/admin/users/${user.id}`, {
+                                  method: 'PATCH',
+                                  headers: { 'Content-Type': 'application/json' },
+                                  body: JSON.stringify({ blacklisted: true }),
+                                  });
+                                  if (!res.ok) {
+                                    toast.error('Failed to blacklist user.');
+                                    return;
+                                  }
+                                  setUsers(u => u.filter(x => x.id !== user.id)); // remove from current list
+                                  toast.success('User blacklisted.');
+                                } catch (e) {
+                                  toast.error(e.message || 'Failed to blacklist user.');
+                                }
                             }}
                             className="rounded-full bg-gray-600 px-3 py-1 text-xs font-medium text-white shadow hover:bg-gray-700 transition cursor-pointer"
                             >

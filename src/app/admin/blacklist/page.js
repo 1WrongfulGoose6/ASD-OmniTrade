@@ -4,6 +4,7 @@ import React from 'react';
 import NavBar from '@/components/NavBar';
 import { useRouter } from 'next/navigation';
 import { csrfFetch } from '@/lib/csrfClient';
+import { useToast } from '@/components/providers/ToastProvider';
 
 export default function BlacklistPage() {
   // state for user list, loading, and errors
@@ -11,6 +12,7 @@ export default function BlacklistPage() {
   const [loading, setLoading] = React.useState(true);
   const [error, setError] = React.useState(null);
   const router = useRouter();
+  const toast = useToast();
 
   //prevents non admins from accessing restricted pages
   React.useEffect(() => {
@@ -96,13 +98,21 @@ export default function BlacklistPage() {
                         {/* remove user from blacklist */}
                         <button
                           onClick={async () => {
-                        const res = await csrfFetch(`/api/admin/users/${user.id}`, {
-                          method: 'PATCH',
-                          headers: { 'Content-Type': 'application/json' },
-                          body: JSON.stringify({ blacklisted: false }),
-                        });
-                            if (!res.ok) return alert('Failed to remove from blacklist');
-                            setUsers(u => u.filter(x => x.id !== user.id));
+                        try {
+                          const res = await csrfFetch(`/api/admin/users/${user.id}`, {
+                            method: 'PATCH',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ blacklisted: false }),
+                          });
+                          if (!res.ok) {
+                            toast.error('Failed to remove user from blacklist.');
+                            return;
+                          }
+                          setUsers(u => u.filter(x => x.id !== user.id));
+                          toast.success('User removed from blacklist.');
+                        } catch (e) {
+                          toast.error(e.message || 'Failed to update user.');
+                        }
                           }}
                           className="rounded-full bg-green-600 px-3 py-1 text-xs font-medium text-white shadow hover:bg-green-700 transition cursor-pointer"
                         >

@@ -4,6 +4,7 @@ import NavBar from "@/components/NavBar";
 import { headers } from "next/headers";
 import NewsLoadMore from "@/components/NewsLoadMore";
 import WaveBackground from "@/components/WaveBackground";
+import { POPULAR_SYMBOLS } from "@/lib/market/quotes";
 
 export const metadata = {
   title: "OmniTrade — News",
@@ -13,7 +14,8 @@ export const metadata = {
 async function fetchNews(limit = 24) {
   const h = await headers();
   const origin = process.env.NEXT_PUBLIC_BASE_URL || `http://${h.get("host")}`;
-  const res = await fetch(`${origin}/api/news?category=general&limit=${limit}`, {
+  const symbolParam = encodeURIComponent(POPULAR_SYMBOLS.join(","));
+  const res = await fetch(`${origin}/api/news?category=company&limit=${limit}&symbols=${symbolParam}`, {
     next: { revalidate: 300 },
   });
   if (!res.ok) return { news: [] };

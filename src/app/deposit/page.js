@@ -6,6 +6,7 @@ import NavBar from "@/components/NavBar";
 import WaveBackground from "@/components/WaveBackground";
 import Image from "next/image";
 import { csrfFetch } from "@/lib/csrfClient";
+import { useToast } from "@/components/providers/ToastProvider";
 
 export default function DepositPage() {
   const [amount, setAmount] = useState("");
@@ -16,6 +17,7 @@ export default function DepositPage() {
   const [busy, setBusy] = useState(false);
   const [showPopup, setShowPopup] = useState(false);
   const router = useRouter();
+  const toast = useToast();
 
   // Card type detection
   const detectCardType = (num) => {
@@ -85,7 +87,7 @@ export default function DepositPage() {
 
       if (!res.ok) {
         if (res.status === 401) {
-          alert("Please log in to deposit.");
+          toast.error("Please log in to deposit.");
           return;
         }
         throw new Error(payload?.error || `Deposit failed (${res.status})`);
@@ -98,7 +100,7 @@ export default function DepositPage() {
         router.push("/portfolio");
       }, 1200);
     } catch (err) {
-      alert(err.message || "Network error");
+      toast.error(err.message || "Network error. Please try again.");
     } finally {
       setBusy(false);
     }

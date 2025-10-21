@@ -4,11 +4,13 @@ import { useRouter } from "next/navigation";
 import NavBar from "@/components/NavBar";
 import WaveBackground from "@/components/WaveBackground";
 import { csrfFetch, getCsrfToken, setCachedCsrfToken } from "@/lib/csrfClient";
+import { useToast } from "@/components/providers/ToastProvider";
 
 export default function LoginForm() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const router = useRouter();
+  const toast = useToast();
 
   useEffect(() => {
     getCsrfToken().catch(() => {
@@ -25,14 +27,17 @@ export default function LoginForm() {
         body: JSON.stringify({ email, password }),
       });
       const data = await res.json();
-      if (!res.ok) return alert(data.error || "Login failed");
+      if (!res.ok) {
+        toast.error(data.error || "Login failed.");
+        return;
+      }
       const newToken = res.headers.get("x-csrf-token");
       setCachedCsrfToken(newToken);
       // session cookie is set by the server on success
       window.dispatchEvent(new Event("auth:changed"));
       router.push("/confirmation?msg=Login%20successful!");
     } catch {
-      alert("Network error");
+      toast.error("Network error. Please try again.");
     }
   };
 

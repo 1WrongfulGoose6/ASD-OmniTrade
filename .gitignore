@@ -54,7 +54,9 @@ node_modules
 /coverage/
 *.lcov
 
-.github/
+!.github/
+.github/*
+!.github/AGENTS.md
 
 # SAST Security Scanning - Coverity
 cov-int/

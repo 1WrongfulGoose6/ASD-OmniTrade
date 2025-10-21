@@ -6,6 +6,11 @@ function toNumber(value, fallback = 0) {
   return Number.isFinite(n) ? n : fallback;
 }
 
+/**
+ * Rebuilds a user's portfolio state by replaying every trade and cash movement.
+ * The snapshot powers dashboard summaries, so it returns holdings enriched with
+ * live quotes plus aggregate cash/valuation totals.
+ */
 export async function buildPortfolioSnapshot(userId) {
   const trades = await prisma.trade.findMany({
     where: { userId },
@@ -168,4 +173,3 @@ export async function getCashBalance(userId) {
     availableCash,
   };
 }
-

@@ -52,9 +52,17 @@ export default function DepositPage() {
         newErrors.expiry = "Invalid month.";
       } else {
         const currentDate = new Date();
-        const expiryDate = new Date(2000 + yy, mm);
-        if (expiryDate <= currentDate) {
-          newErrors.expiry = "Card is expired.";
+        const year = 2000 + yy;
+        const currentYear = currentDate.getFullYear();
+        const maxYear = currentYear + 20;
+        // Guard against obviously invalid future/backdated cards.
+        if (year < currentYear || year > maxYear) {
+          newErrors.expiry = `Year must be between ${currentYear} and ${maxYear}.`;
+        } else {
+          const expiryDate = new Date(year, mm, 1);
+          if (expiryDate <= currentDate) {
+            newErrors.expiry = "Card is expired.";
+          }
         }
       }
     }

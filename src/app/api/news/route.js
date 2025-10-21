@@ -1,6 +1,7 @@
 // src/app/api/news/route.js
 import { NextResponse } from "next/server";
 import { getLatestNews } from "@/lib/server/news";
+import { errorLog } from "@/utils/logger";
 
 export async function GET(request) {
   try {
@@ -20,6 +21,8 @@ export async function GET(request) {
     const news = await getLatestNews({ category, limit, symbols, days });
     return NextResponse.json({ news });
   } catch (e) {
+    // Bubble up the failure but preserve a log entry for production debugging.
+    errorLog("news.route.failed", e);
     return NextResponse.json({ error: e.message || "news_failed" }, { status: 500 });
   }
 }

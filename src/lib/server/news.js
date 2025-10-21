@@ -1,10 +1,13 @@
 import { fetchJsonCached } from "@/lib/mcache";
 import { POPULAR_SYMBOLS } from "@/lib/market/quotes";
 import { getCompanyNews as fetchCompanyNews } from "@/lib/finnhub/news";
+import { errorLog } from "@/utils/logger";
 
 const FINNHUB_API_URL = "https://finnhub.io/api/v1";
 const API_KEY = process.env.FINNHUB_API_KEY;
 const TTL = 60_000;
+// Simple in-memory cache so company-news fan out does not hammer Finnhub.
+const COMPANY_CACHE = new Map();
 
 function normalizeNewsItem(item, fallbackId, overrides = {}) {
   return {
@@ -32,15 +35,30 @@ async function fetchCompanyHeadlines({ symbols = POPULAR_SYMBOLS, limit = 24, da
 
   const results = await Promise.all(
     uniqueSymbols.map(async (symbol) => {
+      const cacheKey = `${symbol}:${days}`;
+      const cached = COMPANY_CACHE.get(cacheKey);
+      const isFresh = cached && Date.now() - cached.at < TTL;
+
+      if (isFresh) {
+        return cached.items.slice(0, perSymbol);
+      }
+
       try {
         const entries = await fetchCompanyNews(symbol, { days, limit: perSymbol });
-        return entries.map((item, idx) =>
+        const normalized = entries.map((item, idx) =>
           normalizeNewsItem(item, `${symbol}-${item.datetime ?? idx}`, {
             category: "company",
             symbol,
           })
         );
-      } catch {
+        COMPANY_CACHE.set(cacheKey, { at: Date.now(), items: normalized });
+        return normalized;
+      } catch (error) {
+        errorLog("news.company.fetch_failed", error, { symbol });
+        // Fall back to stale cache if we have anything, otherwise drop symbol.
+        if (cached?.items) {
+          return cached.items.slice(0, perSymbol);
+        }
         return [];
       }
     })

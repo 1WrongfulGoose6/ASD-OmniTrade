@@ -26,6 +26,7 @@ export default function OrderForm({ symbol, price }) {
   const [busy, setBusy] = useState(false);
   const toast = useToast();
 
+  // Primary submit handler validates inputs then posts to /api/trades.
   async function handleSubmit(e) {
     e.preventDefault();
     if (!symbol) {

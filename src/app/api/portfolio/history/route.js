@@ -8,6 +8,11 @@ import { errorLog } from "@/utils/logger";
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
+/**
+ * Returns a lightweight time series for portfolio charts by replaying the latest
+ * snapshot and synthesising historical points for the requested range. This keeps
+ * the UI fast without needing expensive historical queries.
+ */
 const RANGE_CONFIG = {
   "1h": {
     key: "1h",

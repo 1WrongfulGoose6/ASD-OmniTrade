@@ -1,0 +1,16 @@
+<svg width="64" height="64" viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="favBg" x1="0%" y1="100%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#0F1F38"/>
+      <stop offset="100%" stop-color="#1C3C66"/>
+    </linearGradient>
+    <linearGradient id="favArrow" x1="0%" y1="100%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#4FD1C5"/>
+      <stop offset="100%" stop-color="#81E6D9"/>
+    </linearGradient>
+  </defs>
+  <rect width="64" height="64" rx="14" fill="url(#favBg)"/>
+  <path d="M32 12c-11 0-20 9-20 20s9 20 20 20 20-9 20-20-9-20-20-20zm0 36c-8.8 0-16-7.2-16-16S23.2 16 32 16s16 7.2 16 16-7.2 16-16 16z" fill="#0DF1B8" opacity="0.22"/>
+  <path d="M41.5 24.8c-1-0.8-2.4-0.6-3.2 0.4l-7.6 9.1-5.8-4.7c-1-0.8-2.5-0.7-3.3 0.3L16.7 39c-0.9 1.1-0.7 2.7 0.3 3.5 0.5 0.4 1.1 0.6 1.7 0.6h26.2c1.4 0 2.6-1.2 2.6-2.6 0-0.6-0.2-1.2-0.6-1.7l-5.4-6.4 0-0.1z" fill="url(#favArrow)"/>
+  <path d="M38.8 24.5l5.1 6.3c0.7 0.8 1.9 1 2.8 0.3l3.3-2.7c0.9-0.7 1.1-2 0.4-2.9-0.1-0.2-0.3-0.3-0.4-0.4l-7.6-6.1c-0.9-0.7-2.2-0.5-2.8 0.4l-0.8 1.1z" fill="#76E4C9"/>
+</svg>

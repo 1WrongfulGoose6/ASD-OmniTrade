@@ -23,6 +23,14 @@ export const metadata = {
   authors: [{ name: "OmniTrade Team" }],
   creator: "OmniTrade",
   publisher: "OmniTrade",
+  icons: {
+    icon: [
+      { url: "/favicon.ico", type: "image/x-icon" },
+      { url: "/favicon.svg", type: "image/svg+xml" },
+    ],
+    shortcut: "/favicon.ico",
+    apple: "/favicon.png",
+  },
   robots: {
     index: true,
     follow: true,

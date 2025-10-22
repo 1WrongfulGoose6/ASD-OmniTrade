@@ -1,0 +1,19 @@
+<svg width="512" height="512" viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="title desc">
+  <title id="title">OmniTrade Logo</title>
+  <desc id="desc">A stylised O enclosing an upward arrow to represent multi-asset trading momentum</desc>
+  <defs>
+    <linearGradient id="bgGradient" x1="0%" y1="100%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#0F1F38"/>
+      <stop offset="100%" stop-color="#1C3C66"/>
+    </linearGradient>
+    <linearGradient id="arrowGradient" x1="0%" y1="100%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#4FD1C5"/>
+      <stop offset="100%" stop-color="#81E6D9"/>
+    </linearGradient>
+  </defs>
+  <rect width="512" height="512" rx="116" fill="url(#bgGradient)"/>
+  <path d="M256 112c-79.4 0-144 64.6-144 144s64.6 144 144 144 144-64.6 144-144-64.6-144-144-144zm0 264c-66.2 0-120-53.8-120-120s53.8-120 120-120 120 53.8 120 120-53.8 120-120 120z" fill="#0DF1B8" opacity="0.25"/>
+  <path d="M334 190c-4.7-4-11.7-3.5-15.7 1.2l-46.3 55.3-35.8-28.6c-4.9-3.9-12-3.2-15.9 1.7l-60 75.9c-4 5-3.2 12.3 1.8 16.2 2.1 1.7 4.7 2.6 7.3 2.6h200.3c6.6 0 12-5.4 12-12 0-2.7-0.9-5.4-2.6-7.5L334 190z" fill="url(#arrowGradient)"/>
+  <path d="M320 188l36.5 45.4c3.6 4.5 10.1 5.2 14.6 1.6l23.4-18.9c4.5-3.6 5.2-10.1 1.6-14.6-0.5-0.6-1-1.1-1.6-1.6l-52.7-42.5c-4.5-3.6-11-2.9-14.6 1.6L320 188z" fill="#76E4C9"/>
+  <circle cx="256" cy="256" r="224" fill="none" stroke="rgba(79,209,197,0.2)" stroke-width="12"/>
+</svg>

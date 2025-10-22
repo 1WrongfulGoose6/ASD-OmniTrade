@@ -11,7 +11,6 @@ export async function POST(req) {
   try {
     const csrfFailure = validateRequestCsrf(req);
     if (csrfFailure) return csrfFailure;
-
     const userId = await getUserIdFromCookies();
     if (!userId) {
       return NextResponse.json({ error: "unauthorized" }, { status: 401 });
@@ -20,6 +19,7 @@ export async function POST(req) {
     const { amount } = await req.json();
     const numericAmount = Number(amount);
 
+    // Validate amount
     if (isNaN(numericAmount) || numericAmount <= 0) {
       return NextResponse.json(
         { error: "Invalid deposit amount" },
@@ -27,7 +27,7 @@ export async function POST(req) {
       );
     }
 
-    // Create a deposit record
+    // Create deposit record
     const deposit = await prisma.deposit.create({
       data: {
         amount: numericAmount,
@@ -36,7 +36,7 @@ export async function POST(req) {
       },
     });
 
-    // Try to update balance if field exists
+    // Update user balance
     try {
       await prisma.user.update({
         where: { id: userId },

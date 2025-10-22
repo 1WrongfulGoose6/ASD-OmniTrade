@@ -26,9 +26,8 @@ export async function POST(req) {
       return NextResponse.json({ error: "Invalid withdrawal amount" }, { status: 400 });
     }
 
-    // --- Check available cash ---
+    // Confirm sufficient funds
     const { availableCash } = await getCashBalance(userId);
-
     if (amount > availableCash) {
       return NextResponse.json(
         { error: `Insufficient funds. Available cash: ${availableCash.toFixed(2)} AUD` },
@@ -36,7 +35,7 @@ export async function POST(req) {
       );
     }
 
-    // --- Store as withdrawal entry ---
+    // Create withdrawal record
     const withdrawalRecord = await prisma.deposit.create({
       data: {
         amount,
@@ -60,7 +59,7 @@ export async function GET() {
     userId = await getUserIdFromCookies();
     if (!userId) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
 
-    // Fetch withdrawals (supporting legacy negative entries)
+    // Get last 50 withdrawals (for portfolio pg)
     const items = await prisma.deposit.findMany({
       where: {
         userId,
@@ -72,12 +71,14 @@ export async function GET() {
       orderBy: { createdAt: "desc" },
       take: 50,
     });
-
+    // Normalize amount (stored in the same table as deposit)
     const normalized = items.map((item) => ({
       ...item,
       amount: item.kind === "WITHDRAW" ? -Math.abs(item.amount) : item.amount,
     }));
 
+
+    
     return NextResponse.json({ withdrawals: normalized }, { status: 200 });
   } catch (e) {
     errorLog("cash.withdrawal.list.failed", e, { userId });

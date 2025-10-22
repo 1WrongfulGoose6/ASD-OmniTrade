@@ -55,11 +55,12 @@ export default function WithdrawPage() {
     if (!validateForm()) return;
 
     setBusy(true);
+    // Call API
     try {
       const res = await csrfFetch("/api/withdraw", {
         method: "POST",
         headers: { "content-type": "application/json" },
-        body: JSON.stringify({ amount: Number(amount) }), // ignoring method for DB simplicity
+        body: JSON.stringify({ amount: Number(amount) }),
       });
 
       const ct = res.headers.get("content-type") || "";
@@ -87,7 +88,7 @@ export default function WithdrawPage() {
       setBusy(false);
     }
   };
-
+  // Render form depending on withdrawal method
   const renderMethodFields = () => {
     switch (method) {
       case "bank":

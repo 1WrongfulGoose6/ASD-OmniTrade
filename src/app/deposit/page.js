@@ -114,6 +114,7 @@ export default function DepositPage() {
     setErrors(newErrors);
   }
 
+  // dummy addresses for crypto types
   const dummyAddress =
     cryptoType === "btc"
       ? "bc1qexampleaddress1234567890"
@@ -124,7 +125,6 @@ export default function DepositPage() {
   setGeneratedAddress(dummyAddress);
   setLocked(true);
 };
-
 
 const handleCopyAndRedirect = async () => {
   if (!generatedAddress) {
@@ -137,9 +137,8 @@ const handleCopyAndRedirect = async () => {
   }
 
   setBusy(true);
-
+  // Call API
   try {
-    // 1) Record deposit on the server (same payload as other methods)
     const res = await csrfFetch("/api/deposit", {
       method: "POST",
       headers: { "content-type": "application/json" },
@@ -154,23 +153,21 @@ const handleCopyAndRedirect = async () => {
     const payload = ct.includes("application/json") ? await res.json() : null;
 
     if (!res.ok) {
-      // show server error and don't proceed
       const msg = payload?.error || `Deposit failed (${res.status})`;
       toast.error(msg);
       setBusy(false);
       return;
     }
 
-    // 2) Copy the generated address to clipboard
+    // Copy address to clipboard
     try {
       await navigator.clipboard.writeText(generatedAddress);
     } catch (copyErr) {
-      // copying can fail on some browsers — still proceed but notify user
       console.warn("Clipboard copy failed:", copyErr);
       toast.warn("Could not copy address automatically — please copy it manually.");
     }
 
-    // 3) Show confirmation overlay and redirect
+    // Show confirmation and redirect
     setShowPopup(true);
     setTimeout(() => {
       router.push("/portfolio");
@@ -293,6 +290,7 @@ const handleCopyAndRedirect = async () => {
                     type="text"
                     value={bankAccountName}
                     onChange={(e) => setBankAccountName(e.target.value)}
+                    placeholder="Mr John Doe"
                     disabled={locked}
                     className="input mt-1 w-full rounded-lg border border-gray-300 px-3 py-2"
                   />
@@ -328,6 +326,7 @@ const handleCopyAndRedirect = async () => {
                     onChange={(e) => setBankAccountNumber(e.target.value)}
                     disabled={locked}
                     className="input mt-1 w-full rounded-lg border border-gray-300 px-3 py-2"
+                    placeholder="123456789"
                   />
                   {errors.bankAccountNumber && (
                     <p className="text-red-500 text-sm">

@@ -4,7 +4,7 @@ export async function fetchWithBackoff(url, opts = {}, { label = "fetch" } = {})
 
   // Happy path: not rate-limited
   if (res.status !== 429) {
-    console.info(`[${label}] OK ${res.status} — under rate limit`);
+    console.info(`[${label}] OK ${res.status} - under rate limit`);
     return res;
   }
 

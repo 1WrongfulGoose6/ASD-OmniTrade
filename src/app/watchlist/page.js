@@ -137,7 +137,7 @@ export default function WatchlistPage() {
                       </td>
                       <td className="px-4 py-3 text-gray-600">{row.symbol}</td>
                       <td className="px-4 py-3 text-right text-gray-900">
-                        {row.price ?? row.currentPrice ?? '—'}
+                        {row.price ?? row.currentPrice ?? '-'}
                       </td>
                       <td
                         className={`px-4 py-3 text-right font-medium ${
@@ -146,10 +146,10 @@ export default function WatchlistPage() {
                             : 'text-red-600'
                         }`}
                       >
-                        {row.change ?? row.change24h ?? '—'}
+                        {row.change ?? row.change24h ?? '-'}
                       </td>
                       <td className="px-4 py-3 text-right text-gray-600">
-                        {row.marketCap ?? '—'}
+                        {row.marketCap ?? '-'}
                       </td>
                     </tr>
                   ))}

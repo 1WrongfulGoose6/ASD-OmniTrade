@@ -4,8 +4,8 @@ const globalForPrisma = globalThis;
 
 // Validate DATABASE_URL is set
 if (!process.env.DATABASE_URL) {
-  console.error('❌ DATABASE_URL is not set!');
-  console.error('💡 Create a .env.local file with DATABASE_URL');
+  console.error('DATABASE_URL is not set!');
+  console.error('Hint: Create a .env.local file with DATABASE_URL');
   console.error('   For local development, use: DATABASE_URL="file:./prisma/dev.db"');
   console.error('   See .env.example for reference');
 }

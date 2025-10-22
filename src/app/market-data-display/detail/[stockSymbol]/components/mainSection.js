@@ -73,7 +73,7 @@ export default function MainSection({ stockSymbol }) {
 
         <div className="flex items-center gap-5">
           <span className="text-lg font-semibold text-gray-800">
-            {stockData.symbol} — {stockData.name}
+            {stockData.symbol} - {stockData.name}
           </span>
           <span className="text-green-600 font-bold">{stockData.currentPrice}</span>
         </div>

@@ -106,7 +106,7 @@ export default function TradePageClient() {
                   {name ? ` • ${name}` : ""}
                 </div>
                 <div className="text-2xl font-semibold">
-                  {price != null ? `$${price.toFixed(2)}` : "—"}
+                  {price != null ? `$${price.toFixed(2)}` : "-"}
                 </div>
               </div>
             </div>

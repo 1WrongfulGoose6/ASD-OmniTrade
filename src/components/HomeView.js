@@ -15,7 +15,7 @@ function funGreeting(nameLike) {
   const options = [
     `Hey ${name}, ready to outsmart the market?`,
     `Welcome back, ${name}! Let's make some moves.`,
-    `${name}, your portfolio called—it wants a win today.`,
+    `${name}, your portfolio called - it wants a win today.`,
     `Good to see you, ${name}. Charts are looking spicy.`,
     `Let’s trade smart, ${name}. Onward!`,
   ];
@@ -146,14 +146,14 @@ export default function HomeView({
                         href={`/market-data-display/detail/${row.symbol}`}
                         className="font-semibold hover:underline"
                       >
-                        {row.symbol}{row.name ? ` — ${row.name}` : ''}
+                        {row.symbol}{row.name ? ` - ${row.name}` : ''}
                       </Link>
                       <div className="text-right">
                         <div className="text-sm text-gray-900">
-                          {row.price != null ? `$${Number(row.price).toFixed(2)}` : '—'}
+                          {row.price != null ? `$${Number(row.price).toFixed(2)}` : '-'}
                         </div>
                         <div className={`text-xs font-medium ${isUp ? 'text-emerald-600' : 'text-red-600'}`}>
-                          {change || '—'}
+                          {change || '-'}
                         </div>
                       </div>
                     </div>
@@ -221,10 +221,10 @@ export default function HomeView({
                       <div className="font-medium">{item.symbol}</div>
                       <div className="text-sm text-gray-600">{item.name}</div>
                       <div className="mt-2 text-gray-900">
-                        {item.price != null ? `$${Number(item.price).toFixed(2)}` : '—'}
+                        {item.price != null ? `$${Number(item.price).toFixed(2)}` : '-'}
                       </div>
                       <div className={`text-sm font-semibold ${isUp ? 'text-emerald-600' : 'text-red-600'}`}>
-                        {change || '—'}
+                        {change || '-'}
                       </div>
                     </Link>
                   );

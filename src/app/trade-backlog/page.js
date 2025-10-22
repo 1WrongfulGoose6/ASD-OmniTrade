@@ -81,7 +81,7 @@ export default function TradeBacklog() {
 
     const query = filters.searchQuery.trim();
 
-    // 🔸 Warn for invalid input
+    // Warn for invalid input
     if (/\d/.test(query)) {
       warn = 'Search should not contain numbers.';
       filtered = [];

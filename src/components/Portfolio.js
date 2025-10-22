@@ -182,7 +182,7 @@ export default function Portfolio() {
                     <p className="text-xs uppercase tracking-wide text-gray-500">Performance ({rangeLabel})</p>
                     <p className={`mt-2 text-2xl font-semibold ${performanceClass}`}>
                       {historyLoading && !historyErr && "Loading…"}
-                      {!historyLoading && historyErr && "—"}
+                      {!historyLoading && historyErr && "-"}
                       {performanceReady && (
                         <>
                           {percentSign}
@@ -292,7 +292,7 @@ export default function Portfolio() {
                     <tr key={r.symbol} className="border-b border-gray-200/80 last:border-0">
                       <td className="p-3 font-semibold text-gray-900">{r.symbol}</td>
                       <td className="p-3 text-gray-700">
-                        {r.price != null ? `$${r.price.toFixed(2)}` : "—"}
+                        {r.price != null ? `$${r.price.toFixed(2)}` : "-"}
                       </td>
                       <td className={`p-3 ${r.change >= 0 ? "text-emerald-600" : "text-red-600"}`}>
                         {r.change.toFixed(2)} ({r.changePercent.toFixed(2)}%)

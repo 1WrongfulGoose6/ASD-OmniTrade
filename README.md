@@ -2,9 +2,9 @@
 [![Coverity Scan Build Status](https://scan.coverity.com/projects/32518/badge.svg)](https://scan.coverity.com/projects/1wrongfulgoose6-asd-omnitrade)
 [![Board Status](https://dev.azure.com/AdvSofDevGroup5/346566fe-0863-4f3c-9906-218568a2a078/42082b11-265f-4c6b-8f3a-de293e801a59/_apis/work/boardbadge/cfaa5c7a-773b-4bc3-812e-6bef28dd0b17?columnOptions=1)](https://dev.azure.com/AdvSofDevGroup5/346566fe-0863-4f3c-9906-218568a2a078/_boards/board/t/42082b11-265f-4c6b-8f3a-de293e801a59/Epics/)
 
-# OmniTrade — Stock Trading Platform
+# OmniTrade - Stock Trading Platform
 
-### 41026 Advanced Software Development — Spring 2025  
+### 41026 Advanced Software Development - Spring 2025  
 ### University of Technology Sydney
 
 OmniTrade is an online broker that allows users to research, trade, and manage their stocks.  
@@ -107,7 +107,7 @@ npx playwright install
   ```
 - (Optional) Seed database:
   ```bash
-  node prisma/seed.js
+  npx prisma db seed
   ```
 
 ### 5. Run Development Server
@@ -122,6 +122,13 @@ npm test            # Jest API/unit tests
 npx playwright test # Playwright tests
 ```
 
+## Seeded Trader Accounts
+
+| Name        | Email              | Password  | Notes                  |
+| ----------- | ------------------ | --------- | ---------------------- |
+| Alice Chen  | `alice@example.com`| `alice123`| Has buy orders and alerts seeded |
+| Ben Romero  | `ben@example.com`  | `ben123`  | Includes sell orders and pending backlog |
+
 ---
 
 ## External Services
@@ -132,7 +139,7 @@ npx playwright test # Playwright tests
 - The Finnhub API is rate-limited. To mitigate this, an in-memory cache is used (`src/lib/mcache.js`).
 
 ### Azure App Services & Azure Flexible Servers for PostgreSQL
-- **Subscription**: Pay-as-you-go plan — includes 750 free hours per month and 30 GB of storage.  
+- **Subscription**: Pay-as-you-go plan - includes 750 free hours per month and 30 GB of storage.  
 - It is unlikely that we will run out of free credits before the end of November.  
   - If we do, a payment card is in place, and we will coordinate with the marker before turning off the service.
 
@@ -140,6 +147,6 @@ npx playwright test # Playwright tests
 
 ## Additional Documentation
 
-- [`docs/design-patterns.md`](docs/design-patterns.md) — REST design patterns and architecture diagrams.
+- [`docs/design-patterns.md`](docs/design-patterns.md) - REST design patterns and architecture diagrams.
 
 ---

@@ -7,7 +7,7 @@ import WaveBackground from "@/components/WaveBackground";
 import { POPULAR_SYMBOLS } from "@/lib/market/quotes";
 
 export const metadata = {
-  title: "OmniTrade — News",
+  title: "OmniTrade - News",
   description: "Latest market headlines",
 };
 

@@ -10,27 +10,27 @@ async function testConnection() {
   const prisma = new PrismaClient();
   
   try {
-    console.log('🔍 Testing database connection...');
+    console.log('Testing database connection...');
     
     // Test basic connection
     await prisma.$connect();
-    console.log('✅ Database connection successful!');
+    console.log('Database connection successful!');
     
     // Test a simple query
     const userCount = await prisma.user.count();
-    console.log(`📊 Current user count: ${userCount}`);
+    console.log(`Current user count: ${userCount}`);
     
     // Test database info
     const result = await prisma.$queryRaw`SELECT version()`;
-    console.log('🐘 PostgreSQL version:', result[0]?.version);
+    console.log('PostgreSQL version:', result[0]?.version);
     
   } catch (error) {
-    console.error('❌ Database connection failed:', error.message);
+    console.error('Database connection failed:', error.message);
     
     if (error.code === 'P1001') {
-      console.error('🔧 Check your DATABASE_URL and network connectivity');
+      console.error('Check your DATABASE_URL and network connectivity');
     } else if (error.code === 'P1017') {
-      console.error('🔧 Server has closed the connection. Check your connection string.');
+      console.error('Server has closed the connection. Check your connection string.');
     }
     
     process.exit(1);

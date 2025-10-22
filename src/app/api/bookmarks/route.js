@@ -64,7 +64,7 @@ export async function DELETE(request) {
       where: { userId_articleId: { userId, articleId: String(articleId) } },
     });
   } catch {
-    // If it wasn't there, that's fine — act idempotent
+    // If it wasn't there, that's fine - act idempotent
   }
   return NextResponse.json({ ok: true }, { status: 200 });
 }

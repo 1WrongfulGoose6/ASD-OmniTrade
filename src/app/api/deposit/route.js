@@ -48,7 +48,7 @@ export async function POST(req) {
 
     auditLog("cash.deposit", userId, { amount: numericAmount });
 
-    return NextResponse.json({ message: "Deposit successful", deposit }, { status: 200 });
+    return NextResponse.json(deposit, { status: 200 });
   } catch (err) {
     errorLog("cash.deposit.failed", err);
     return NextResponse.json({ error: err.message }, { status: 500 });

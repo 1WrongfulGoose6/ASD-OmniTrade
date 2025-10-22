@@ -54,10 +54,8 @@ node_modules
 /coverage/
 *.lcov
 
-!.github/
 .github/*
-!.github/AGENTS.md
 
-# SAST Security Scanning - Coverity
+# SAST Security Scanning
 cov-int/
 SAST-Scan.tgz

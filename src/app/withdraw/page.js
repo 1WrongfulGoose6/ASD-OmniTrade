@@ -4,67 +4,46 @@ import React, { useState } from "react";
 import { useRouter } from "next/navigation";
 import NavBar from "@/components/NavBar";
 import WaveBackground from "@/components/WaveBackground";
-import Image from "next/image";
 import { csrfFetch } from "@/lib/csrfClient";
 import { useToast } from "@/components/providers/ToastProvider";
 
 export default function WithdrawPage() {
+  const [method, setMethod] = useState("bank");
   const [amount, setAmount] = useState("");
-  const [cardNumber, setCardNumber] = useState("");
-  const [expiry, setExpiry] = useState("");
-  const [cvv, setCvv] = useState("");
+  const [formData, setFormData] = useState({
+    accountName: "",
+    bsb: "",
+    accountNumber: "",
+    walletAddress: "",
+    network: "",
+    email: "",
+  });
   const [errors, setErrors] = useState({});
   const [busy, setBusy] = useState(false);
   const [showPopup, setShowPopup] = useState(false);
   const router = useRouter();
   const toast = useToast();
 
-  const detectCardType = (num) => {
-    if (num.startsWith("4")) return "visa";
-    if (/^5[1-5]/.test(num)) return "mastercard";
-    if (/^3[47]/.test(num)) return "amex";
-    return null;
-  };
-  const cardType = detectCardType(cardNumber.replace(/\s+/g, ""));
-
   const validateForm = () => {
-    let newErrors = {};
-
+    const newErrors = {};
     const amt = Number(amount);
     if (!Number.isFinite(amt) || amt <= 0) {
       newErrors.amount = "Enter a valid amount greater than 0";
     }
 
-    const cleanCard = cardNumber.replace(/\s+/g, "");
-    if (!/^\d{15,16}$/.test(cleanCard)) {
-      newErrors.cardNumber = "Card number must be 15 or 16 digits.";
+    if (method === "bank") {
+      if (!formData.accountName.trim()) newErrors.accountName = "Required";
+      if (!/^\d{3}-\d{3}$/.test(formData.bsb)) newErrors.bsb = "Use format 000-000";
+      if (!/^\d{6,9}$/.test(formData.accountNumber)) newErrors.accountNumber = "Invalid account number";
     }
 
-    if (!/^\d{2}\/\d{2}$/.test(expiry)) {
-      newErrors.expiry = "Use MM/YY format.";
-    } else {
-      const [mm, yy] = expiry.split("/").map(Number);
-      if (mm < 1 || mm > 12) {
-        newErrors.expiry = "Invalid month.";
-      } else {
-        const currentDate = new Date();
-        const year = 2000 + yy;
-        const currentYear = currentDate.getFullYear();
-        const maxYear = currentYear + 20;
-        // Guard against obviously invalid future/backdated cards.
-        if (year < currentYear || year > maxYear) {
-          newErrors.expiry = `Year must be between ${currentYear} and ${maxYear}.`;
-        } else {
-          const expiryDate = new Date(year, mm, 1);
-          if (expiryDate <= currentDate) {
-            newErrors.expiry = "Card is expired.";
-          }
-        }
-      }
+    if (method === "crypto") {
+      if (!formData.walletAddress.trim()) newErrors.walletAddress = "Required";
+      if (!formData.network.trim()) newErrors.network = "Required";
     }
 
-    if (!/^\d{3,4}$/.test(cvv)) {
-      newErrors.cvv = "CVV must be 3 or 4 digits.";
+    if (method === "voucher") {
+      if (!/\S+@\S+\.\S+/.test(formData.email)) newErrors.email = "Enter a valid email";
     }
 
     setErrors(newErrors);
@@ -80,7 +59,7 @@ export default function WithdrawPage() {
       const res = await csrfFetch("/api/withdraw", {
         method: "POST",
         headers: { "content-type": "application/json" },
-        body: JSON.stringify({ amount: Number(amount) }),
+        body: JSON.stringify({ amount: Number(amount) }), // ignoring method for DB simplicity
       });
 
       const ct = res.headers.get("content-type") || "";
@@ -109,6 +88,96 @@ export default function WithdrawPage() {
     }
   };
 
+  const renderMethodFields = () => {
+    switch (method) {
+      case "bank":
+        return (
+          <>
+            <div>
+              <label className="block text-sm font-medium text-gray-700">Account Name</label>
+              <input
+                type="text"
+                value={formData.accountName}
+                onChange={(e) => setFormData({ ...formData, accountName: e.target.value })}
+                placeholder="John Smith"
+                className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-gray-900 focus:ring-2 focus:ring-blue-500"
+              />
+              {errors.accountName && <p className="text-red-500 text-sm">{errors.accountName}</p>}
+            </div>
+
+            <div className="flex gap-4">
+              <div className="flex-1">
+                <label className="block text-sm font-medium text-gray-700">BSB</label>
+                <input
+                  type="text"
+                  value={formData.bsb}
+                  onChange={(e) => setFormData({ ...formData, bsb: e.target.value })}
+                  placeholder="123-456"
+                  className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-gray-900 focus:ring-2 focus:ring-blue-500"
+                />
+                {errors.bsb && <p className="text-red-500 text-sm">{errors.bsb}</p>}
+              </div>
+              <div className="flex-1">
+                <label className="block text-sm font-medium text-gray-700">Account Number</label>
+                <input
+                  type="text"
+                  value={formData.accountNumber}
+                  onChange={(e) => setFormData({ ...formData, accountNumber: e.target.value })}
+                  placeholder="12345678"
+                  className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-gray-900 focus:ring-2 focus:ring-blue-500"
+                />
+                {errors.accountNumber && <p className="text-red-500 text-sm">{errors.accountNumber}</p>}
+              </div>
+            </div>
+          </>
+        );
+
+      case "crypto":
+        return (
+          <>
+            <div>
+              <label className="block text-sm font-medium text-gray-700">Wallet Address</label>
+              <input
+                type="text"
+                value={formData.walletAddress}
+                onChange={(e) => setFormData({ ...formData, walletAddress: e.target.value })}
+                placeholder="0xABC123..."
+                className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-gray-900 focus:ring-2 focus:ring-blue-500"
+              />
+              {errors.walletAddress && <p className="text-red-500 text-sm">{errors.walletAddress}</p>}
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700">Network</label>
+              <input
+                type="text"
+                value={formData.network}
+                onChange={(e) => setFormData({ ...formData, network: e.target.value })}
+                placeholder="Ethereum, Bitcoin, etc."
+                className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-gray-900 focus:ring-2 focus:ring-blue-500"
+              />
+              {errors.network && <p className="text-red-500 text-sm">{errors.network}</p>}
+            </div>
+          </>
+        );
+
+      case "voucher":
+        return (
+          <div>
+            <label className="block text-sm font-medium text-gray-700">Email for Voucher</label>
+            <input
+              type="email"
+              value={formData.email}
+              onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+              placeholder="you@example.com"
+              className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-gray-900 focus:ring-2 focus:ring-blue-500"
+            />
+            {errors.email && <p className="text-red-500 text-sm">{errors.email}</p>}
+          </div>
+        );
+    }
+  };
+
   return (
     <main className="relative min-h-screen overflow-hidden bg-gradient-to-br from-blue-600 to-blue-400 text-white">
       <WaveBackground />
@@ -118,52 +187,27 @@ export default function WithdrawPage() {
         <div className="w-full max-w-md rounded-2xl border border-white/25 bg-white/90 p-8 text-gray-900 shadow-lg backdrop-blur">
           <h1 className="mb-6 text-center text-2xl font-bold">Withdraw Funds</h1>
 
-          <form onSubmit={handleSubmit} className="space-y-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-700">Card Number</label>
-              <div className="flex items-center gap-2">
-                <input
-                  type="text"
-                  inputMode="numeric"
-                  value={cardNumber}
-                  onChange={(e) => setCardNumber(e.target.value.replace(/\D/g, ""))}
-                  placeholder="1234 5678 9012 3456"
-                  className="mt-1 flex-1 rounded-lg border border-gray-300 px-3 py-2 text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  required
-                />
-                {cardType === "visa" && <Image src="/visa.png" alt="Visa" width={40} height={25} />}
-                {cardType === "mastercard" && <Image src="/mastercard.png" alt="MasterCard" width={40} height={25} />}
-                {cardType === "amex" && <Image src="/amex.png" alt="Amex" width={40} height={25} />}
-              </div>
-              {errors.cardNumber && <p className="text-red-500 text-sm">{errors.cardNumber}</p>}
-            </div>
+          {/* --- Payment Method Selector --- */}
+          <div className="flex justify-center gap-3 mb-6">
+            {["bank", "crypto", "voucher"].map((m) => (
+              <button
+                key={m}
+                type="button"
+                onClick={() => setMethod(m)}
+                className={`px-4 py-2 rounded-lg border font-medium ${
+                  method === m
+                    ? "bg-blue-600 text-white border-blue-600"
+                    : "bg-white text-gray-700 border-gray-300 hover:bg-gray-100"
+                }`}
+              >
+                {m === "bank" ? "Bank Transfer" : m === "crypto" ? "Crypto" : "Voucher"}
+              </button>
+            ))}
+          </div>
 
-            <div className="flex gap-4">
-              <div className="flex-1">
-                <label className="block text-sm font-medium text-gray-700">Expiry</label>
-                <input
-                  type="text"
-                  value={expiry}
-                  onChange={(e) => setExpiry(e.target.value)}
-                  placeholder="MM/YY"
-                  className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  required
-                />
-                {errors.expiry && <p className="text-red-500 text-sm">{errors.expiry}</p>}
-              </div>
-              <div className="flex-1">
-                <label className="block text-sm font-medium text-gray-700">CVV</label>
-                <input
-                  type="password"
-                  value={cvv}
-                  onChange={(e) => setCvv(e.target.value)}
-                  placeholder="123"
-                  className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  required
-                />
-                {errors.cvv && <p className="text-red-500 text-sm">{errors.cvv}</p>}
-              </div>
-            </div>
+          {/* --- Conditional Form --- */}
+          <form onSubmit={handleSubmit} className="space-y-4">
+            {renderMethodFields()}
 
             <div>
               <label className="block text-sm font-medium text-gray-700">Amount (AUD)</label>
@@ -174,7 +218,7 @@ export default function WithdrawPage() {
                 step="0.01"
                 value={amount}
                 onChange={(e) => setAmount(e.target.value)}
-                className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-gray-900 focus:ring-2 focus:ring-blue-500"
                 required
               />
               {errors.amount && <p className="text-red-500 text-sm">{errors.amount}</p>}

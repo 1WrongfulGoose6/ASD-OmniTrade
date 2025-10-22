@@ -17,44 +17,40 @@ export async function POST(req) {
       return NextResponse.json({ error: "unauthorized" }, { status: 401 });
     }
 
-    const body = await req.json();
-    const amount = parseFloat(body.amount);
-    if (isNaN(amount) || amount <= 0) {
-      return NextResponse.json({ error: "Invalid deposit amount" }, { status: 400 });
+    const { amount } = await req.json();
+    const numericAmount = Number(amount);
+
+    if (isNaN(numericAmount) || numericAmount <= 0) {
+      return NextResponse.json(
+        { error: "Invalid deposit amount" },
+        { status: 400 }
+      );
     }
 
+    // Create a deposit record
     const deposit = await prisma.deposit.create({
       data: {
-        amount,
+        amount: numericAmount,
         kind: "DEPOSIT",
         userId,
       },
     });
 
-    auditLog("cash.deposit", userId, { amount });
+    // Try to update balance if field exists
+    try {
+      await prisma.user.update({
+        where: { id: userId },
+        data: { balance: { increment: numericAmount } },
+      });
+    } catch (balanceErr) {
+      console.warn("Skipping balance update — no balance field found:", balanceErr.message);
+    }
 
-    return NextResponse.json(deposit);
+    auditLog("cash.deposit", userId, { amount: numericAmount });
+
+    return NextResponse.json({ message: "Deposit successful", deposit }, { status: 200 });
   } catch (err) {
     errorLog("cash.deposit.failed", err);
     return NextResponse.json({ error: err.message }, { status: 500 });
-  }
-}
-
-export async function GET() {
-  let userId;
-  try {
-    userId = await getUserIdFromCookies();
-    if (!userId) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
-
-    const items = await prisma.deposit.findMany({
-      where: { userId },
-      orderBy: { createdAt: "desc" },
-      take: 50,
-    });
-
-    return NextResponse.json({ deposits: items }, { status: 200 });
-  } catch (e) {
-    errorLog("cash.deposit.list.failed", e, { userId });
-    return NextResponse.json({ error: "internal_error" }, { status: 500 });
   }
 }

@@ -1,4 +1,3 @@
-// src/app/api/marketdata/route.js
 import { NextResponse } from "next/server";
 import { fetchJsonCached } from "@/lib/mcache";
 

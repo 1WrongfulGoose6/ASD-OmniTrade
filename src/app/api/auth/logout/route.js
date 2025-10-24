@@ -1,4 +1,3 @@
-// src/app/api/auth/logout/route.js
 import { NextResponse } from "next/server";
 import { clearSessionCookie } from "@/utils/auth";
 import { clearCsrfCookie, validateRequestCsrf } from "@/utils/csrf";

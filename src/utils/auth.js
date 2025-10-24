@@ -1,4 +1,3 @@
-// src/utils/auth.js
 import jwt from "jsonwebtoken";
 import { cookies, headers } from "next/headers";
 

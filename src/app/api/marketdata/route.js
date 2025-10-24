@@ -1,4 +1,3 @@
-// src/app/api/marketdata/route.js
 import { NextResponse } from "next/server";
 import { getQuotes, POPULAR_SYMBOLS } from "@/lib/market/quotes";
 import { errorLog } from "@/utils/logger";

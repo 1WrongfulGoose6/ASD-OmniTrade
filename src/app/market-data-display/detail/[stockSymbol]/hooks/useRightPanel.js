@@ -1,4 +1,3 @@
-// src/app/market-data-display/detail/[stockSymbol]/hooks/useRightPanel.js
 'use client'
 
 import React,{ createContext, useContext, useState, useCallback } from "react";

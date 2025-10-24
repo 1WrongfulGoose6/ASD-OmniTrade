@@ -1,4 +1,3 @@
-// src/utils/logger.js
 const SENSITIVE_KEYS = new Set([
   "authorization",
   "cookie",

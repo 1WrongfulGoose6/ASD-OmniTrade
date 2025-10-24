@@ -1,4 +1,3 @@
-// app/news/page.js
 import React from "react";
 import NavBar from "@/components/NavBar";
 import { headers } from "next/headers";

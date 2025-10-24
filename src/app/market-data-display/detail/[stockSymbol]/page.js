@@ -1,4 +1,3 @@
-// src/app/market-data-display/detail/[stockSymbol]/page.js
 import NavBar from "@/components/NavBar";
 import WaveBackground from "@/components/WaveBackground";
 import DetailClient from "./DetailClient";

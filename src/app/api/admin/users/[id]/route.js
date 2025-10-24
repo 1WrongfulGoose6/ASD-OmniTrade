@@ -1,4 +1,3 @@
-// src/app/api/admin/users/[id]/route.js
 import { NextResponse } from 'next/server';
 import { prisma } from '@/utils/prisma';
 import { getUserSession } from '@/utils/auth';

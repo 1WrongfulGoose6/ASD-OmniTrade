@@ -1,4 +1,3 @@
-// src/components/AlertsPanel.js
 "use client";
 
 import React from "react";

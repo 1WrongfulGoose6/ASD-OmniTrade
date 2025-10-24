@@ -1,4 +1,3 @@
-// src/app/api/marketdata/detail/[stockSymbol]/route.js
 import { NextResponse } from "next/server";
 import { errorLog } from "@/utils/logger";
 

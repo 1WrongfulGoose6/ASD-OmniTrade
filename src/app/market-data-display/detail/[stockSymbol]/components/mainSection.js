@@ -1,4 +1,3 @@
-// src/app/market-data-display/detail/[stockSymbol]/components/mainSection.js
 "use client";
 
 import { ArrowLeft } from "lucide-react";

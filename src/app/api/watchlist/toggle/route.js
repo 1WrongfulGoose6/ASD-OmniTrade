@@ -1,4 +1,3 @@
-// src/app/api/watchlist/toggle/route.js
 import { NextResponse } from "next/server";
 import { prisma } from "@/utils/prisma";
 import { getUserIdFromCookies } from "@/utils/auth";

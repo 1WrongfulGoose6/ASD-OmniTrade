@@ -1,5 +1,3 @@
-// src/lib/mcache.js
-
 // super-simple in-memory cache (per Next.js server process)
 // key -> { at:number, ttl:number, value:any }
 const BOX = new Map();

@@ -1,4 +1,3 @@
-// lib/http/fetchWithBackoff.js
 export async function fetchWithBackoff(url, opts = {}, { label = "fetch" } = {}) {
   const res = await fetch(url, opts);
 

@@ -1,4 +1,3 @@
-// src/app/api/watchlist/route.js
 import { NextResponse } from "next/server";
 import { getUserIdFromCookies } from "@/utils/auth";
 import { getWatchlistWithQuotes } from "@/lib/server/watchlist";

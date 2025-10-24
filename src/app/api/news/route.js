@@ -1,4 +1,3 @@
-// src/app/api/news/route.js
 import { NextResponse } from "next/server";
 import { getLatestNews } from "@/lib/server/news";
 import { errorLog } from "@/utils/logger";

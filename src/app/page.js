@@ -1,4 +1,3 @@
-// app/page.js
 import React from "react";
 import HomeView from "@/components/HomeView";
 import { getLatestNews } from "@/lib/server/news";
@@ -33,4 +32,3 @@ export default async function HomePage() {
     />
   );
 }
-

@@ -1,4 +1,3 @@
-// src/components/BookmarkButton.js
 'use client';
 
 import React from 'react';

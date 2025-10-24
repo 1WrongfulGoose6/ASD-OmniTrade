@@ -54,6 +54,8 @@ OmniTrade is built on **Next.js**, utilising **PostgreSQL** and **Azure App Serv
 | F11 | News | Homepage and symbol-specific news feeds. | Savya |
 | F12 | UI Design System | Consistent UI components, layouts, and navigation. | Savya |
 | F13 | Market Data API Integration | Finnhub integration and backend proxy endpoints. | Ali |
+| F13 | CI/CD Pipeline Setup - Azure App Services Deployments. | Ali |
+| F13 | Testing design, and environment setup. Feature testing | Ali |
 
 ---
 
@@ -71,7 +73,14 @@ OmniTrade is built on **Next.js**, utilising **PostgreSQL** and **Azure App Serv
 ├── docs/                   # Design pattern overview and diagrams
 ├── public/                 # Static assets served by Next.js
 ├── scripts/                # Deployment helpers (prepare-deploy, DB URL builder, etc.)
+├── test.md                 # Test plans
 ```
+
+---
+
+## Testing
+
+Our unit tests and E2E Playwright test plans can be found in `test.md`
 
 ---
 

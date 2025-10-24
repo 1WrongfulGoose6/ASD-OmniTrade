@@ -1,4 +1,3 @@
-// src/lib/bookmarksStore.js
 export function keyFor(uid) {
   return uid ? `omni.bookmarks.v1.u${uid}` : 'omni.bookmarks.v1.anon';
 }

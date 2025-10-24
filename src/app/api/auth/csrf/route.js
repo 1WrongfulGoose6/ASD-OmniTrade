@@ -1,4 +1,3 @@
-// src/app/api/auth/csrf/route.js
 import { NextResponse } from "next/server";
 import {
   generateCsrfToken,

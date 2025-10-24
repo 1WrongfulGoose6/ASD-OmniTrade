@@ -1,4 +1,3 @@
-// src/lib/csrfClient.js
 const CSRF_ENDPOINT = "/api/auth/csrf";
 const CSRF_HEADER = "x-csrf-token";
 

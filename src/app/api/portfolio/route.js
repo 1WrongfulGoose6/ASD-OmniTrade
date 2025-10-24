@@ -1,4 +1,3 @@
-// src/app/api/portfolio/route.js
 import { NextResponse } from "next/server";
 import { getUserIdFromCookies } from "@/utils/auth";
 import { buildPortfolioSnapshot } from "@/lib/server/portfolio";

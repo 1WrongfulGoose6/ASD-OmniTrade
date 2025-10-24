@@ -1,4 +1,3 @@
-// src/lib/userScope.js
 let cachedUserId = null;
 let inFlight = null;
 

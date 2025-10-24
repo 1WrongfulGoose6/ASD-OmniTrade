@@ -1,4 +1,3 @@
-// src/app/market-data-display/detail/[stockSymbol]/components/newsSection.js
 "use client";
 
 import React, { useEffect, useState } from "react";

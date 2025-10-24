@@ -1,4 +1,3 @@
-// scripts/test-db-connection.js
 // Test script to validate PostgreSQL connection
 
 // Load environment variables from .env.local

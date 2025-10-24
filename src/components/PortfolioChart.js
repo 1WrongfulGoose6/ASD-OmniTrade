@@ -1,4 +1,3 @@
-// src/components/PortfolioChart.js
 "use client";
 
 import React from "react";

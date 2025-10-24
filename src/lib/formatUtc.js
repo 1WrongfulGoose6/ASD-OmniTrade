@@ -1,4 +1,3 @@
-// src/lib/formatUtc.js
 export function formatEpochUtc(epochSeconds) {
   if (!epochSeconds) return "";
   const d = new Date(epochSeconds * 1000);

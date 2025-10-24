@@ -1,4 +1,3 @@
-// src/app/market-data-display/detail/[stockSymbol]/components/graphSection.js
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid, Label } from "recharts";
 import React from "react";
 import PropTypes from "prop-types";

@@ -1,4 +1,3 @@
-// src/components/WaveBackground.js
 'use client';
 export default function WaveBackground() {
   return (

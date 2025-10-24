@@ -1,4 +1,3 @@
-// lib/finnhub/news.js
 const BASE = "https://finnhub.io/api/v1";
 
 function authHeaders() {

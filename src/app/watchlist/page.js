@@ -1,4 +1,3 @@
-// src/app/watchlist/page.js
 'use client';
 
 import React from 'react';

@@ -1,4 +1,3 @@
-// src/app/portfolio/page.js
 import React from 'react';
 import Portfolio from '@/components/Portfolio';
 

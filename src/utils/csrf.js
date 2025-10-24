@@ -1,4 +1,3 @@
-// src/utils/csrf.js
 import crypto from "crypto";
 import { NextResponse } from "next/server";
 
